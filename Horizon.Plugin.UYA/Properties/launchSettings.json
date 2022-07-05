@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Horizon.Plugin.UYA": {
+      "commandName": "Executable",
+      "executablePath": "M:\\horizon\\github\\horizon-server\\Server.Medius\\bin\\Debug\\netcoreapp3.1\\Server.Medius.exe",
+      "workingDirectory": "M:\\horizon\\github\\horizon-server\\Server.Medius\\bin\\Debug\\netcoreapp3.1\\"
+    },
+    "Attach": {
+      "commandName": "Executable"
+    }
+  }
+}
