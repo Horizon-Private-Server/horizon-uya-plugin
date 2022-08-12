@@ -39,8 +39,6 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
-            host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_CLIENT_ECHO, OnRecvClientEcho);
-            host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_ECHO, OnRecvServerEcho);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 7, OnRecvCustomMessage);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
@@ -170,30 +168,6 @@ namespace Horizon.Plugin.UYA
 
             // pass to game
             return Game.OnPlayerPostWideStats(msg);
-        }
-
-        async Task OnRecvClientEcho(RT_MSG_TYPE msgId, object data)
-        {
-            var msg = (Server.Medius.PluginArgs.OnMessageArgs)data;
-            if (msg.Ignore || msg.Player == null)
-                return;
-
-            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return;
-
-            msg.Player.OnRecvServerEcho(new RT_MSG_SERVER_ECHO());
-        }
-
-        async Task OnRecvServerEcho(RT_MSG_TYPE msgId, object data)
-        {
-            var msg = (Server.Medius.PluginArgs.OnMessageArgs)data;
-            if (msg.Ignore || msg.Player == null)
-                return;
-
-            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return;
-
-            msg.Ignore = true;
         }
 
         async Task OnRecvCheatQuery(RT_MSG_TYPE msgId, object data)

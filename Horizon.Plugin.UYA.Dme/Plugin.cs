@@ -25,30 +25,7 @@ namespace Horizon.Plugin.UYA.Dme
             WorkingDirectory = workingDirectory;
             Host = host;
 
-            host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_CLIENT_ECHO, OnRecvClientEcho);
-            host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_ECHO, OnRecvServerEcho);
-
             return Task.CompletedTask;
         }
-
-        async Task OnRecvClientEcho(RT_MSG_TYPE msgId, object data)
-        {
-            var args = data as OnMessageArgs;
-            if (args == null)
-                return;
-
-            args.Player.OnRecvServerEcho(new RT_MSG_SERVER_ECHO());
-        }
-
-        async Task OnRecvServerEcho(RT_MSG_TYPE msgId, object data)
-        {
-            var args = data as OnMessageArgs;
-            if (args == null)
-                return;
-
-            args.Ignore = true;
-        }
-
-
     }
 }
