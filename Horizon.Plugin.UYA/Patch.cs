@@ -71,10 +71,10 @@ namespace Horizon.Plugin.UYA
                 AppId = 10683,
                 HookAddress = 0x00139E94, 
                 HookType = PatchSetup.PatchHookType.JUMP,
-                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-pal.bin")),
+                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10683.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000E0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-pal.bin")),
+                    (0x000E0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
                     (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
@@ -84,10 +84,10 @@ namespace Horizon.Plugin.UYA
                 AppId = 10684,
                 HookAddress = 0x00139E94,
                 HookType = PatchSetup.PatchHookType.JUMP,
-                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-ntsc.bin")),
+                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000E0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-ntsc.bin")),
+                    (0x000E0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
                     (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },

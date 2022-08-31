@@ -24,7 +24,7 @@ namespace Horizon.Plugin.UYA.CustomModes
             return Task.FromResult<string>(null);
         }
 
-        public abstract Task<Payload> GetPayload(Server.Medius.Models.Game game, GameMetadata metadata);
+        public abstract Task<Payload> GetPayload(Server.Medius.Models.Game game, ClientObject client, GameMetadata metadata);
 
 
     }

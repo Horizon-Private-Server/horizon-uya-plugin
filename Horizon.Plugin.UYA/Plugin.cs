@@ -292,6 +292,11 @@ namespace Horizon.Plugin.UYA
                                     await game.SetWorldStatus(MediusWorldStatus.WorldClosed);
                                 break;
                             }
+                        case 13: // redownload patch
+                            {
+                                await Patch.SendPatch(msg.Player);
+                                break;
+                            }
                         default:
                             {
                                 Host.Log(InternalLogLevel.WARN, $"Unhandled custom msg id {customMsgId}: {msg}");

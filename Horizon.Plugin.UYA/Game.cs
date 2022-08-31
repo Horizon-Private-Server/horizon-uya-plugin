@@ -183,9 +183,6 @@ namespace Horizon.Plugin.UYA
             // send map override to all clients
             await BroadcastMapOverride(game);
 
-            // construct payloads to send to client
-            var payloads = new List<Payload>();
-
             // parse gamemode
             var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
             var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
@@ -194,29 +191,35 @@ namespace Horizon.Plugin.UYA
                 mode = Modes.FindCustomModeById(map.ModeId.Value);
             }
 
-            if (mode != null)
-            {
-                var modePayload = await mode.GetPayload(game, metadata);
-                if (modePayload != null)
-                {
-                    // add mode payload
-                    payloads.Add(modePayload);
-
-                    // add mode module entry
-                    payloads.Add(new Payload(0x000CF000, new PatchModuleEntry()
-                    {
-                        Type = PatchModuleEntryType.RUN_ONCE_GAME,
-                        GameEntrypoint = modePayload.Address,
-                        LobbyEntrypoint = modePayload.Address + 8,
-                        LoadEntrypoint = modePayload.Address + 16,
-                    }.Serialize()));
-                }
-            }
 
             // send payloads to all clients
-            if (payloads.Count > 0)
-                foreach (var gameClient in game.Clients)
+            foreach (var gameClient in game.Clients)
+            {
+                // construct payloads to send to client
+                var payloads = new List<Payload>();
+
+                if (mode != null)
+                {
+                    var modePayload = await mode.GetPayload(game, gameClient.Client, metadata);
+                    if (modePayload != null)
+                    {
+                        // add mode payload
+                        payloads.Add(modePayload);
+
+                        // add mode module entry
+                        payloads.Add(new Payload(0x000CF000, new PatchModuleEntry()
+                        {
+                            Type = PatchModuleEntryType.RUN_ONCE_GAME,
+                            GameEntrypoint = modePayload.Address,
+                            LobbyEntrypoint = modePayload.Address + 8,
+                            LoadEntrypoint = modePayload.Address + 16,
+                        }.Serialize()));
+                    }
+                }
+
+                if (payloads.Count > 0)
                     await Downloader.InitiateDataDownload(gameClient.Client, 201, payloads);
+            }
 
             // store player wide stats
             _ = Task.Run(async () =>
@@ -313,7 +316,7 @@ namespace Horizon.Plugin.UYA
 
                 switch (game.RulesSet)
                 {
-                    case 0: // cq
+                    case 0: // siege
                         {
                             objectiveLabel = "Bolts";
                             break;
@@ -324,34 +327,18 @@ namespace Horizon.Plugin.UYA
                             break;
                         }
                     case 2: // dm
-                    case 4: // juggy
                         {
                             objectiveLabel = "Kills";
                             break;
                         }
-                    case 3: // koth
-                        {
-                            objectiveLabel = "Hill Time";
-                            break;
-                        }
                 }
 
-                // timelimit if not cq
-                if (game.RulesSet != 0)
-                {
-                    var time = $"{timelimit * 5} minutes";
-                    if (timelimit == 0)
-                        time = "None";
+                // timelimit
+                var time = $"{timelimit * 5} minutes";
+                if (timelimit == 0)
+                    time = "None";
 
-                    gameInfo += $"\nTimelimit: {time}";
-                }
-
-                // cq options
-                if (game.RulesSet == 0 && (isLockdown || isHomenodes))
-                {
-                    objectiveLabel = null;
-                    gameInfo += $"\nConquest Type: {(isLockdown ? "Lockdown" : "Homenodes")}";
-                }
+                gameInfo += $"\nTimelimit: {time}";
 
                 // objective
                 if (!String.IsNullOrEmpty(objectiveLabel))

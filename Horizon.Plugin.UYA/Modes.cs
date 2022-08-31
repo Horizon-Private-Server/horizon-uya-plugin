@@ -10,7 +10,7 @@ namespace Horizon.Plugin.UYA
     {
         static readonly BaseCustomMode[] CustomModes = new BaseCustomMode[]
         {
-
+            new ExampleCustomMode()
         };
 
         public static BaseCustomMode FindCustomModeById(CustomModeId id)
@@ -24,6 +24,8 @@ namespace Horizon.Plugin.UYA
     public enum CustomModeId : sbyte
     {
         // custom mode ids
+
+        CMODE_ID_EXAMPLE = 1,
 
         /*
         CMODE_ID_GUN_GAME = 1,
