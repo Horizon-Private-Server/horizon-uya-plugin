@@ -353,3 +353,7 @@ MigrationBackup/
 Server.Dme/out/
 Server.Medius/out/
 Server.UniverseInformation/out/
+
+
+server/
+out/
