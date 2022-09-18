@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <PackageReference Include="DotNetty.Common" Version="0.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="RT.Common">
       <HintPath>..\..\horizon-server\RT.Common\bin\Debug\netstandard2.0\RT.Common.dll</HintPath>
       <Private>false</Private>

@@ -1,4 +1,4 @@
-﻿using RT.Common;
+using RT.Common;
 using RT.Models;
 using Server.Dme.PluginArgs;
 using Server.Plugins.Interface;
