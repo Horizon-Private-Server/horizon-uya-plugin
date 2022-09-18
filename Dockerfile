@@ -5,7 +5,7 @@ COPY . /src
 
 # Remove the xcopy commmand
 RUN sed -i '38,42d' /src/Horizon.Plugin.UYA/Horizon.Plugin.UYA.csproj
-RUN sed -i '26,28d' /src/Horizon.Plugin.UYA.Dme/Horizon.Plugin.UYA.Dme.csproj
+RUN sed -i '30,32d' /src/Horizon.Plugin.UYA.Dme/Horizon.Plugin.UYA.Dme.csproj
 
 #====== Build DME
 WORKDIR /src/server/horizon-server/Server.Dme
