@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Dme\bin\Debug\netcoreapp3.1/Plugins/uya&quot;" />
+    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Dme\bin\Debug\netcoreapp3.1\Plugins\uya&quot;" />
   </Target>
 
 </Project>
