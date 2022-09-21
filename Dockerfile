@@ -4,8 +4,8 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as builder
 COPY . /src
 
 # Remove the xcopy commmand
-RUN sed -i '39,43d' /src/Horizon.Plugin.UYA/Horizon.Plugin.UYA.csproj
-RUN sed -i '31,33d' /src/Horizon.Plugin.UYA.Dme/Horizon.Plugin.UYA.Dme.csproj
+RUN sed -i '41,43d' /src/Horizon.Plugin.UYA/Horizon.Plugin.UYA.csproj
+RUN sed -i '32,34d' /src/Horizon.Plugin.UYA.Dme/Horizon.Plugin.UYA.Dme.csproj
 
 #====== Build DME
 WORKDIR /src/server/horizon-server/Server.Dme

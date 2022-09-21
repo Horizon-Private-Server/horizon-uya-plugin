@@ -47,11 +47,11 @@ namespace Horizon.Plugin.UYA.Dme
 
         public static void StartServer()
         {
-            IPAddress ipAddress = IPAddress.Parse("0.0.0.0");
+            //IPAddress ipAddress = IPAddress.Parse("0.0.0.0");
 
-            IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 9999);
+            //IPEndPoint ipEndPoint = new IPEndPoint(ipAddress, 9999);
 
-            Server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006));
+            Server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 9999));
             Server.Standards.RegisterStandard(new WebSocketFactoryRfc6455());
 
             Console.WriteLine("Starting server ...");
@@ -95,23 +95,32 @@ namespace Horizon.Plugin.UYA.Dme
         
         public static async void SendData()
         {
+            
             int counter = 1;
             while (true)
             {
                 List<WebSocket> ToRemove = new List<WebSocket>();
                 foreach (var client in websocketConnections)
                 {
-                    using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
-                    using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
+                    try
                     {
-                        await sw.WriteAsync("Hello World!");
+                        using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
+                        using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
+                        {
+                            await sw.WriteAsync("Hello World!" + counter);
+                        }
                     }
+                    catch
+                    {
+                        ToRemove.Add(client);
+                    }
+
                 }
 
-                /*
+                
                 foreach (var remove in ToRemove)
                     websocketConnections.Remove(remove);
-                */
+                
 
                 Console.WriteLine(websocketConnections.Count);
                 await Task.Delay(5000);
