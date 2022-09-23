@@ -13,6 +13,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Server.Dme.PluginArgs;
+using Server.Pipeline.Udp;
+
 
 // http://vtortola.github.io/WebSocketListener/
 // https://github.com/vtortola/WebSocketListener
@@ -30,21 +33,52 @@ namespace Horizon.Plugin.UYA.Dme
             10684, // NTSC
         };
 
-        public static DmeRelayWebsocketServer SocketRelay = null;
+        public static DmeRelayWebsocketServer DmeRelay = null;
 
         public Task Start(string workingDirectory, IPluginHost host)
         {
             WorkingDirectory = workingDirectory;
             Host = host;
 
-            host.Log(InternalLogLevel.INFO, "TEST-------------------");
+            host.RegisterAction(PluginEvent.DME_GAME_ON_RECV_UDP, OnWebsocketPacket);
+            host.RegisterAction(PluginEvent.DME_GAME_ON_RECV_TCP, OnWebsocketPacket);
 
-            Console.WriteLine("Starting Plugin!!!");
-            SocketRelay = new DmeRelayWebsocketServer();
-            Console.WriteLine("Finished starting stuff!");
+            DmeRelay = new DmeRelayWebsocketServer(this);
 
             return Task.CompletedTask;
         }
-        
+
+        private Task OnWebsocketPacket(PluginEvent eventId, object data)
+        {
+            if (eventId == PluginEvent.DME_GAME_ON_RECV_UDP)
+            {
+                var msg = (Server.Dme.PluginArgs.OnUdpMsg)data;
+                DmeRelay.ParsePacket("udp", msg.Player, msg.Packet.Message);
+            }
+            else if (eventId == PluginEvent.DME_GAME_ON_RECV_TCP)
+            {
+                var msg = (Server.Dme.PluginArgs.OnTcpMsg)data;
+                DmeRelay.ParsePacket("tcp", msg.Player, msg.Packet);
+            }
+
+            return Task.CompletedTask;
+
+        }
+
+
+        private Task OnTcpPacket(PluginEvent eventId, object data)
+        {
+
+
+
+            return Task.CompletedTask;
+        }
+
+        public void Log(InternalLogLevel level, string text)
+        {
+            Host.Log(level, "UYA Plugin Logging: " + text);
+        }
+
+
     }
 }

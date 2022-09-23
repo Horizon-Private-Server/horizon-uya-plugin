@@ -24,16 +24,17 @@ namespace Horizon.Plugin.UYA.Dme
 
         public async Task send(string v)
         {
-            Console.WriteLine("Sending: " + v);
+            //Console.WriteLine("Sending: " + v);
             using (WebSocketMessageWriteStream messageWriterStream = socket.CreateMessageWriter(WebSocketMessageType.Text))
             using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
             {
+                sw.AutoFlush = true;
                 if (IsConnected())
                 {
                     await sw.WriteAsync(v);
                 }
             }
-            Console.WriteLine("Done sending!");
+            //Console.WriteLine("Done sending!");
         }
 
         public WebSocket GetSocket()
