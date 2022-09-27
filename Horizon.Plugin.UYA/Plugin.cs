@@ -35,7 +35,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_CREATED, OnGameCreated);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_DESTROYED, OnGameDestroyed);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_STARTED, OnGameStarted);
-            host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_WORLD_REPORT0_POST, OnWorldReport0);
+            host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_WORLD_REPORT0, OnWorldReport0);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_ENDED, OnGameEnded);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
