@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Dynamic;
 using System.Net;
 using System.Threading.Tasks;
 using DotNetty.Common.Internal.Logging;
+using Newtonsoft.Json;
 using Server.Medius;
 using Server.Plugins.Interface;
-
+using System.Text.Json;
 namespace Horizon.Plugin.UYA
 {
     public class RoboApi
@@ -91,15 +94,14 @@ namespace Horizon.Plugin.UYA
                     Arg = Split[1];
                 }
                 Response = ProcessAltApi(Arg);
-
             }
             else if (RawUrl.StartsWith("/games/"))
             {
-
+                Response = ProcessGameListApi();
             }
             else if (RawUrl.StartsWith("/players/"))
             {
-
+                Response = ProcessPlayerListApi();
             }
 
             HttpListenerResponse response = context.Response;
@@ -115,6 +117,89 @@ namespace Horizon.Plugin.UYA
         public string ProcessAltApi(string arg)
         {
             return "[\"" + arg + "\"]";
+        }
+
+        public class GamePlayerList
+        {
+            public List<GamePlayerListPlayer> playerList { get; set; }
+        }
+
+        public class GamePlayerListPlayer
+        {
+            public int AccountId { get; set; }
+            public string AccountName { get; set; }
+
+            public int DmeId { get; set; }
+        }
+
+        public string ProcessGameListApi()
+        {
+            string result = Program.Database.GetGameList().Result;
+            Plugin.Log(InternalLogLevel.INFO, "Result: " + result);
+
+            dynamic jsonResult = JsonConvert.DeserializeObject(result);
+
+            Plugin.Log(InternalLogLevel.INFO, "Json: " + jsonResult);
+
+
+            string mainPlayerListString = Program.Database.GetPlayerList().Result;
+            dynamic mainPlayerListJson = JsonConvert.DeserializeObject(mainPlayerListString);
+
+
+
+            foreach (var game in jsonResult)
+            {
+                GamePlayerList playerList = new GamePlayerList
+                {
+                   playerList = new List<GamePlayerListPlayer>()
+                };
+                int gameid = game.GameId;
+
+                // Get all the players associated with this game
+                foreach (var player in mainPlayerListJson)
+                {
+                    if (player.GameId == gameid)
+                    {
+                        playerList.playerList.Add(new GamePlayerListPlayer()
+                        {
+                            AccountId = player.AccountId,
+                            AccountName = player.AccountName,
+                            DmeId = 0
+                        });
+                    }
+                }
+
+                game.playerList = JsonConvert.SerializeObject(playerList);
+                //game.playerList = playerList;
+
+            }
+
+
+            return jsonResult.ToString();
+
+            /*
+            foreach (var feature in jsonObj.features)
+            {
+                feature.geometry.Replace(
+                        JObject.FromObject(
+                                    new
+                                    {
+                                        type = "Point",
+                                        coordinates = feature.geometry.coordinates[0][0]
+                                    }));
+            }
+
+            var newJson = contourManifest.ToString();
+            string re = Program.MediusManager.
+ 
+
+            return re;
+            */
+        }
+        public string ProcessPlayerListApi()
+        {
+            string re = Program.Database.GetPlayerList().Result;
+            return re;
         }
     }
 }
