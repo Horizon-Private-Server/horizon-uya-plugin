@@ -8,6 +8,9 @@ using Newtonsoft.Json;
 using Server.Medius;
 using Server.Plugins.Interface;
 using System.Text.Json;
+using Server.Database.Models;
+using Server.Medius.Models;
+
 namespace Horizon.Plugin.UYA
 {
     public class RoboApi
@@ -128,8 +131,9 @@ namespace Horizon.Plugin.UYA
         {
             public int AccountId { get; set; }
             public string AccountName { get; set; }
-
             public int DmeId { get; set; }
+            public string StatsWide { get; set; }
+            public string MediusStats { get; set; }
         }
 
         public string ProcessGameListApi()
@@ -159,12 +163,30 @@ namespace Horizon.Plugin.UYA
                 foreach (var player in mainPlayerListJson)
                 {
                     if (player.GameId == gameid)
-                    {
+                    {            
+
+                        Plugin.Log(InternalLogLevel.INFO, "Querying account id: " + player.AccountId);
+
+                        int accId = player.AccountId;
+                        AccountDTO accountResult = Program.Database.GetAccountById(accId).Result;
+
+                        ClientObject client = Program.Manager.GetClientByAccountId(accId);
+
+                        int dmeId = -1;
+                        if (client.DmeClientId != null)
+                        {
+                            dmeId = (int)client.DmeClientId;
+                        }
+
+                        Plugin.Log(InternalLogLevel.INFO, "Finished!");
+
                         playerList.playerList.Add(new GamePlayerListPlayer()
                         {
                             AccountId = player.AccountId,
                             AccountName = player.AccountName,
-                            DmeId = 0
+                            DmeId = dmeId,
+                            StatsWide = ConvertStatsWideToString(accountResult.AccountWideStats),
+                            MediusStats = accountResult.MediusStats
                         });
                     }
                 }
@@ -200,6 +222,17 @@ namespace Horizon.Plugin.UYA
         {
             string re = Program.Database.GetPlayerList().Result;
             return re;
+        }
+
+        private string ConvertStatsWideToString(int[] statsWide)
+        {
+            string result = "";
+
+            foreach (int stat in statsWide)
+            {
+                result += stat.ToString("X4");
+            }
+            return result;
         }
     }
 }
