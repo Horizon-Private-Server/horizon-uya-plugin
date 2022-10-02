@@ -218,10 +218,37 @@ namespace Horizon.Plugin.UYA
             return re;
             */
         }
+
         public string ProcessPlayerListApi()
         {
-            string re = Program.Database.GetPlayerList().Result;
-            return re;
+
+            string mainPlayerListString = Program.Database.GetPlayerList().Result;
+            dynamic mainPlayerListJson = JsonConvert.DeserializeObject(mainPlayerListString);
+
+
+            // Get all the players associated with this game
+            foreach (var player in mainPlayerListJson)
+            {
+                Plugin.Log(InternalLogLevel.INFO, "Querying account id: " + player.AccountId);
+
+                int accId = player.AccountId;
+                AccountDTO accountResult = Program.Database.GetAccountById(accId).Result;
+
+                ClientObject client = Program.Manager.GetClientByAccountId(accId);
+
+                int dmeId = -1;
+                if (client.DmeClientId != null)
+                {
+                    dmeId = (int)client.DmeClientId;
+                }
+
+                player.DmeId = dmeId;
+                player.StatsWide = ConvertStatsWideToString(accountResult.AccountWideStats);
+                player.MediusStats = accountResult.MediusStats;
+            }
+
+
+            return mainPlayerListJson.ToString();
         }
 
         private string ConvertStatsWideToString(int[] statsWide)
