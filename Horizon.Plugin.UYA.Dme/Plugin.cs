@@ -76,7 +76,7 @@ namespace Horizon.Plugin.UYA.Dme
 
         public void Log(InternalLogLevel level, string text)
         {
-            Host.Log(level, "UYA Plugin Logging: " + text);
+            Host.Log(level, "UYA DME Plugin Logging: " + text);
         }
 
 

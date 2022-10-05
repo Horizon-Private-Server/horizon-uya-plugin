@@ -24,10 +24,14 @@ namespace Horizon.Plugin.UYA
             10684, // NTSC
         };
 
+        public static RoboApi Api = null;
+
         public Task Start(string workingDirectory, IPluginHost host)
         {
             WorkingDirectory = workingDirectory;
             Host = host;
+
+            Api = new RoboApi((Plugin)this);
 
             host.RegisterAction(PluginEvent.TICK, OnTick);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_GET_POLICY, OnPlayerLoggedIn);
@@ -323,6 +327,11 @@ namespace Horizon.Plugin.UYA
                     }
                 }
             }
+        }
+
+        public void Log(InternalLogLevel level, string text)
+        {
+            Host.Log(level, "UYA Plugin Logging: " + text);
         }
 
     }
