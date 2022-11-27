@@ -24,10 +24,14 @@ namespace Horizon.Plugin.UYA
             10684, // NTSC
         };
 
+        public static RoboApi Api = null;
+
         public Task Start(string workingDirectory, IPluginHost host)
         {
             WorkingDirectory = workingDirectory;
             Host = host;
+
+            Api = new RoboApi((Plugin)this);
 
             host.RegisterAction(PluginEvent.TICK, OnTick);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_GET_POLICY, OnPlayerLoggedIn);
@@ -35,6 +39,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_CREATED, OnGameCreated);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_DESTROYED, OnGameDestroyed);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_STARTED, OnGameStarted);
+            host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_WORLD_REPORT0, OnWorldReport0);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_ENDED, OnGameEnded);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
@@ -44,6 +49,8 @@ namespace Horizon.Plugin.UYA
 
             return Task.CompletedTask;
         }
+
+
 
         Task OnTick(PluginEvent eventId, object data)
         {
@@ -61,6 +68,7 @@ namespace Horizon.Plugin.UYA
             return Patch.QueryForPatch(msg.Player);
         }
 
+
         async Task OnPlayerLoggedOut(PluginEvent eventId, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnPlayerArgs)data;
@@ -73,8 +81,22 @@ namespace Horizon.Plugin.UYA
             await Downloader.OnPlayerLoggedOut(msg.Player);
         }
 
+        Task OnWorldReport0(PluginEvent eventType, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnWorldReport0Args)data;
+            MediusWorldReport0 report = (MediusWorldReport0)msg.Request;
+
+            if (report.WorldStatus == MediusWorldStatus.WorldActive && !report.GameName.StartsWith("[IG] "))
+            {
+
+                report.GameName = "[IG] " + report.GameName;
+            }
+            return Task.CompletedTask;
+        }
+
         Task OnGameStarted(PluginEvent eventId, object data)
         {
+
             var msg = (Server.Medius.PluginArgs.OnGameArgs)data;
             if (msg.Game == null)
                 return Task.CompletedTask;
@@ -305,6 +327,11 @@ namespace Horizon.Plugin.UYA
                     }
                 }
             }
+        }
+
+        public void Log(InternalLogLevel level, string text)
+        {
+            Host.Log(level, "UYA Plugin Logging: " + text);
         }
 
     }
