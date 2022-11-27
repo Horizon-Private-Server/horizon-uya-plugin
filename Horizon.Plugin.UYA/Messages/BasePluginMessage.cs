@@ -9,7 +9,7 @@ namespace Horizon.Plugin.UYA.Messages
     public abstract class BasePluginMessage : BaseMediusMessage
     {
         public override NetMessageTypes PacketClass => NetMessageTypes.MessageClassDME;
-        public override byte PacketType => 7;
+        public override byte PacketType => 8;
         public abstract byte CustomMsgId { get; }
 
 
