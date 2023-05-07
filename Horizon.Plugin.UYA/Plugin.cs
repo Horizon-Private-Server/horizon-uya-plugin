@@ -4,6 +4,7 @@ using RT.Common;
 using RT.Models;
 using Server.Common;
 using Server.Common.Stream;
+using Server.Medius.Models;
 using Server.Medius.PluginArgs;
 using Server.Plugins.Interface;
 using System;
@@ -49,6 +50,8 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
+            host.RegisterAction(PluginEvent.MEDIUS_PRE_ACCOUNT_CREATE_ON_NOT_FOUND, PreOnAccountCreateOnNotFound);
+            host.RegisterAction(PluginEvent.MEDIUS_POST_ACCOUNT_CREATE_ON_NOT_FOUND, PostOnAccountCreateOnNotFound);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
@@ -59,6 +62,61 @@ namespace Horizon.Plugin.UYA
 
         Task OnTick(PluginEvent eventId, object data)
         {
+            return Task.CompletedTask;
+        }
+
+        Task PreOnAccountCreateOnNotFound(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnAccountCreateOnNotFoundArgs)data;
+            
+            MediusAccountLoginRequest request = (MediusAccountLoginRequest)msg.Request;
+            ClientObject Player = (ClientObject)msg.Player;
+
+            if (msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            if (request.Username == null)
+                return Task.CompletedTask;
+
+
+            if (RoboDb.AccountExists(request.Username)) {
+                string roboPassword = RoboDb.GetPassword(request.Username);
+                string horizonPassword = RoboDb.EncryptString(request.Password);
+
+                if (roboPassword != horizonPassword) {
+                    DebugLog($"Robo Password ({roboPassword}) != Horizon Password ({horizonPassword}) for username: {request.Username}  ");
+                    Player.Queue(new MediusAccountLoginResponse()
+                    {
+                        MessageID = request.MessageID,
+                        StatusCode = MediusCallbackStatus.MediusInvalidPassword
+                    });
+
+                    request.Username = null;
+                    request.Password = null;
+                }
+                
+                DebugLog($"Robo Password and Horizon Password match for username: {request.Username}!");
+            }
+            
+            return Task.CompletedTask;
+        }
+
+        Task PostOnAccountCreateOnNotFound(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnAccountCreateOnNotFoundArgs)data;
+            
+            MediusAccountLoginRequest request = (MediusAccountLoginRequest)msg.Request;
+
+            if (msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            DebugLog("Post Got: " + request.Username);
+            DebugLog("Post Got: " + request.Password);
+
             return Task.CompletedTask;
         }
 
@@ -334,13 +392,12 @@ namespace Horizon.Plugin.UYA
             }
         }
 
-        public void Log(InternalLogLevel level, string text)
-        {
-            Host.Log(level, "UYA Plugin Logging: " + text);
+        public void Log(string text) {
+            DebugLog(text);
         }
 
         public void DebugLog(string text) {
-            Host.Log(InternalLogLevel.DEBUG, "UYA Plugin Logging: " + text);
+            Host.Log(InternalLogLevel.INFO, "UYA Plugin Logging: " + text);
         }
 
     }
