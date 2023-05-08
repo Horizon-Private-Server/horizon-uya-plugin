@@ -44,6 +44,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
+            host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
@@ -218,6 +219,29 @@ namespace Horizon.Plugin.UYA
                         Host.Log(InternalLogLevel.WARN, $"Unhandled cheat query sequence id {cheatQuery.SequenceId}: {msg}");
                         break;
                     }
+            }
+        }
+
+        async Task OnPlayerInfoRequest(NetMessageTypes msgClass, byte msgType, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnMediusMessageArgs)data;
+            if (msg.Ignore || !msg.IsIncoming || msg.Player == null)
+                return;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return;
+
+            // for some reason UYA requests player info for account id -1
+            // maybe this was some kind of special account back in the day
+            // the game errors if we don't return success
+            // so here we intercept and handle the response instead of letting the server handle it
+            if (msg.Message is MediusPlayerInfoRequest playerInfoRequest && playerInfoRequest.AccountID == -1)
+            {
+                msg.Ignore = true;
+                msg.Player.Queue(new MediusPlayerInfoResponse()
+                {
+                    MessageID = playerInfoRequest.MessageID,
+                    StatusCode = MediusCallbackStatus.MediusSuccess
+                });
             }
         }
 
