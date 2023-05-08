@@ -121,8 +121,8 @@ namespace Horizon.Plugin.UYA
                 }
                 catch (Exception ex)
                 {
-                    Host.DebugLog($"Exception trying to update stats on {account.ToString()}");
-                    Host.DebugLog(ex.ToString());
+                    DebugLog($"Exception trying to update stats on {account.ToString()}");
+                    DebugLog(ex.ToString());
                 }
             }
             DebugLog($"Added {totalAdded} / {accounts.Count} !");
