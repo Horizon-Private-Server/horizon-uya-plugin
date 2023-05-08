@@ -19,5 +19,7 @@ namespace Horizon.Plugin.UYA
             "Olive",
             "Maroon"
         };
+        public const int ACCOUNTSTATS_MAXLEN = 256;
+
     }
 }

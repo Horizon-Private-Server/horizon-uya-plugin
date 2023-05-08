@@ -28,7 +28,7 @@ namespace Horizon.Plugin.UYA
 
         public async Task StartAsync()
         {
-            Plugin.Log(InternalLogLevel.INFO, "Starting Robo API ...");
+            Plugin.Log("Starting Robo API ...");
 
             string[] prefixes = {
                 "http://*:8281/games/",
@@ -44,21 +44,21 @@ namespace Horizon.Plugin.UYA
             
             try
             {
-                Plugin.Log(InternalLogLevel.INFO, "Starting Robo API Listener start ...");
+                Plugin.Log("Starting Robo API Listener start ...");
                 listener.Start();
             }
             catch (HttpListenerException hlex)
             {
-                Plugin.Log(InternalLogLevel.INFO, "WEIRD ERROR --------------");
+                Plugin.Log("WEIRD ERROR --------------");
                 return;
             }
             while (listener.IsListening)
             {
-                Plugin.Log(InternalLogLevel.INFO, "Starting Robo API listening ...");
+                Plugin.Log("Starting Robo API listening ...");
 
                 var context = await listener.GetContextAsync();
 
-                Plugin.Log(InternalLogLevel.INFO, "GOT CONTEXT ASYNC ...");
+                Plugin.Log("GOT CONTEXT ASYNC ...");
 
                 try
                 {
@@ -66,7 +66,7 @@ namespace Horizon.Plugin.UYA
                 }
                 catch (Exception ex)
                 {
-                    Plugin.Log(InternalLogLevel.WARN, "# EXCEPTION #   " + ex.StackTrace);
+                    Plugin.Log("# EXCEPTION #   " + ex.StackTrace);
                 }
             }
 
@@ -75,8 +75,8 @@ namespace Horizon.Plugin.UYA
 
         private Task ProcessRequestAsync(HttpListenerContext context)
         {
-            Plugin.Log(InternalLogLevel.INFO, "GOT A REQUEST!!!");
-            Plugin.Log(InternalLogLevel.INFO, context.Request.RawUrl);
+            Plugin.Log("GOT A REQUEST!!!");
+            Plugin.Log(context.Request.RawUrl);
 
             string RawUrl = context.Request.RawUrl;
 
@@ -139,11 +139,11 @@ namespace Horizon.Plugin.UYA
         public string ProcessGameListApi()
         {
             string result = Program.Database.GetGameList().Result;
-            Plugin.Log(InternalLogLevel.INFO, "Result: " + result);
+            Plugin.Log("Result: " + result);
 
             dynamic jsonResult = JsonConvert.DeserializeObject(result);
 
-            Plugin.Log(InternalLogLevel.INFO, "Json: " + jsonResult);
+            Plugin.Log("Json: " + jsonResult);
 
 
             string mainPlayerListString = Program.Database.GetPlayerList().Result;
@@ -165,7 +165,7 @@ namespace Horizon.Plugin.UYA
                     if (player.GameId == gameid)
                     {            
 
-                        Plugin.Log(InternalLogLevel.INFO, "Querying account id: " + player.AccountId);
+                        Plugin.Log("Querying account id: " + player.AccountId);
 
                         int accId = player.AccountId;
                         AccountDTO accountResult = Program.Database.GetAccountById(accId).Result;
@@ -178,7 +178,7 @@ namespace Horizon.Plugin.UYA
                             dmeId = (int)client.DmeClientId;
                         }
 
-                        Plugin.Log(InternalLogLevel.INFO, "Finished!");
+                        Plugin.Log("Finished!");
 
                         playerList.playerList.Add(new GamePlayerListPlayer()
                         {
@@ -229,7 +229,7 @@ namespace Horizon.Plugin.UYA
             // Get all the players associated with this game
             foreach (var player in mainPlayerListJson)
             {
-                Plugin.Log(InternalLogLevel.INFO, "Querying account id: " + player.AccountId);
+                Plugin.Log("Querying account id: " + player.AccountId);
 
                 int accId = player.AccountId;
                 AccountDTO accountResult = Program.Database.GetAccountById(accId).Result;

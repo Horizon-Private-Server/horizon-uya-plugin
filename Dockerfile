@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as builder
 COPY . /src
 
 # Remove the xcopy commmand
-RUN sed -i '41,43d' /src/Horizon.Plugin.UYA/Horizon.Plugin.UYA.csproj
+RUN sed -i '43,45d' /src/Horizon.Plugin.UYA/Horizon.Plugin.UYA.csproj
 RUN sed -i '36,38d' /src/Horizon.Plugin.UYA.Dme/Horizon.Plugin.UYA.Dme.csproj
 
 #====== Build DME
@@ -21,6 +21,9 @@ RUN cp /server/*.dll /src/Horizon.Plugin.UYA.Dme/
 #====== Build DME
 WORKDIR /src/Horizon.Plugin.UYA
 RUN dotnet publish -c Release -o /out/medius
+#RUN rm -rf /out/medius/runtimes/osx-x64  
+#RUN rm -rf /out/medius/runtimes/win-x64  
+#RUN rm -rf /out/medius/runtimes/win-x86  
 
 #===== Build MAS/MLS/NAT
 WORKDIR /src/Horizon.Plugin.UYA.Dme
