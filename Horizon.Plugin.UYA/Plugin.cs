@@ -4,6 +4,9 @@ using RT.Common;
 using RT.Models;
 using Server.Common;
 using Server.Common.Stream;
+using Server.Database;
+using Server.Database.Models;
+using Server.Medius;
 using Server.Medius.Models;
 using Server.Medius.PluginArgs;
 using Server.Plugins.Interface;
@@ -13,6 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+
 
 namespace Horizon.Plugin.UYA
 {
@@ -39,6 +44,8 @@ namespace Horizon.Plugin.UYA
             if (RoboDb == null)
                 RoboDb = new RoboDatabase((Plugin)this);
 
+            SyncRoboDbToHorizon();
+
             host.RegisterAction(PluginEvent.TICK, OnTick);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_GET_POLICY, OnPlayerLoggedIn);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_LOGGED_OUT, OnPlayerLoggedOut);
@@ -50,12 +57,77 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
-            host.RegisterAction(PluginEvent.MEDIUS_PRE_ACCOUNT_CREATE_ON_NOT_FOUND, PreOnAccountCreateOnNotFound);
-            host.RegisterAction(PluginEvent.MEDIUS_POST_ACCOUNT_CREATE_ON_NOT_FOUND, PostOnAccountCreateOnNotFound);
+            host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
             return Task.CompletedTask;
+        }
+
+        public void SyncRoboDbToHorizon() {
+            DebugLog("Syncing robo db to horizon ...");
+            List<RoboAccount> accounts = RoboDb.DumpUsers();
+
+            DebugLog($"Found {accounts.Count} robo accounts!");
+
+            int processed = 0;
+            int totalAdded = 0;
+
+            foreach (RoboAccount account in accounts) {
+                processed += 1; 
+                if (processed % 100 == 0) 
+                    DebugLog($"Processed {processed} / {accounts.Count} ...");
+
+                //DebugLog($"Processing: {account.ToString()}");
+
+                // Check if account already exists in database
+                Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(account.Username, 10684); // Call the async method
+                task.Wait(); // Wait for the async method to complete
+
+                //DebugLog($"Result: {task.ToString()}");
+
+                if (task.Result != null){
+                    DebugLog("Already exists!");
+                    continue;
+                }
+
+                totalAdded += 1;
+
+                Task<AccountDTO> taskAccountCreate = Server.Medius.Program.Database.CreateAccount(new CreateAccountDTO()
+                {
+                    AccountName = account.Username,
+                    AccountPassword = Utils.ComputeSHA256(account.Password),
+                    MachineId = "1",
+                    MediusStats = Convert.ToBase64String(new byte[Constants.ACCOUNTSTATS_MAXLEN]),
+                    AppId = account.AppId
+                });
+
+                if (taskAccountCreate.Result == null) {
+                    DebugLog($"ERROR! Not able to create: {account.ToString()}");
+                }
+                AccountDTO accountResult = taskAccountCreate.Result;
+                int accountId = accountResult.AccountId;
+
+                try
+                {
+                    //DebugLog($"Updating stats for: {account.Username}");
+                    Task<bool> taskUpdateStats = Server.Medius.Program.Database.PostAccountLadderStats(new StatPostDTO() {
+                        AccountId = accountId,
+                        Stats = account.Stats
+                    }); // Call the async method
+
+                    task.Wait(); // Wait for the async method to complete
+                    //DebugLog($"Update?: {taskUpdateStats.Result.ToString()}");
+                }
+                catch (Exception ex)
+                {
+                    Host.DebugLog($"Exception trying to update stats on {account.ToString()}");
+                    Host.DebugLog(ex.ToString());
+                }
+            }
+            DebugLog($"Added {totalAdded} / {accounts.Count} !");
+
+            DebugLog("Done syncing Robo db to Horizon!");
         }
 
 
@@ -65,9 +137,50 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
+        
+        Task OnAccountLogin(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnAccountLoginRequestArgs)data;
+            
+            MediusAccountLoginRequest request = (MediusAccountLoginRequest)msg.Request;
+            ClientObject Player = (ClientObject)msg.Player;
+
+            if (msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            if (request.Username == null)
+                return Task.CompletedTask;
+
+
+            if (RoboDb.AccountExists(request.Username)) {
+                // If password = Robo hashed password, then change the password to be the robo encrypted PW?
+                string roboPassword = RoboDb.GetPassword(request.Username);
+
+                //Check if account already exists in database
+                Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(request.Username, 10684); // Call the async method
+                task.Wait(); // Wait for the async method to complete
+
+                if (task.Result == null){
+                    return Task.CompletedTask;
+                }
+
+                if (RoboDb.EncryptString(request.Password) != roboPassword) {
+                    DebugLog("Passwords don't match!");
+                    return Task.CompletedTask;
+                }
+
+                // passwords match
+                request.Password = roboPassword;
+            }
+
+            return Task.CompletedTask;
+        }
+
         Task PreOnAccountCreateOnNotFound(PluginEvent eventId, object data)
         {
-            var msg = (Server.Medius.PluginArgs.OnAccountCreateOnNotFoundArgs)data;
+            var msg = (Server.Medius.PluginArgs.OnAccountLoginRequestArgs)data;
             
             MediusAccountLoginRequest request = (MediusAccountLoginRequest)msg.Request;
             ClientObject Player = (ClientObject)msg.Player;
@@ -100,23 +213,6 @@ namespace Horizon.Plugin.UYA
                 DebugLog($"Robo Password and Horizon Password match for username: {request.Username}!");
             }
             
-            return Task.CompletedTask;
-        }
-
-        Task PostOnAccountCreateOnNotFound(PluginEvent eventId, object data)
-        {
-            var msg = (Server.Medius.PluginArgs.OnAccountCreateOnNotFoundArgs)data;
-            
-            MediusAccountLoginRequest request = (MediusAccountLoginRequest)msg.Request;
-
-            if (msg.Player == null)
-                return Task.CompletedTask;
-            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return Task.CompletedTask;
-
-            DebugLog("Post Got: " + request.Username);
-            DebugLog("Post Got: " + request.Password);
-
             return Task.CompletedTask;
         }
 

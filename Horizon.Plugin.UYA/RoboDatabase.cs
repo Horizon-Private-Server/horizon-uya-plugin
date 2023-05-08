@@ -13,6 +13,7 @@ using Server.Database.Models;
 using Server.Medius.Models;
 using System.Data.SQLite;
 using BCrypt.Net;
+using System.Collections.Generic;
 
 namespace Horizon.Plugin.UYA
 {
@@ -49,6 +50,57 @@ namespace Horizon.Plugin.UYA
             //TestDb();
         }
 
+        public List<RoboAccount> DumpUsers() {
+            List<RoboAccount> accounts = new List<RoboAccount>();
+
+            // Create a command to select all rows from the table
+            var command = new SQLiteCommand("SELECT username, password, ladderstatswide FROM users", Sql_con);
+            
+            // Execute the command and create a data reader
+            using (var reader = command.ExecuteReader())
+            {
+                // Loop through each row in the result set
+                while (reader.Read())
+                {
+                    // Access the column values using the appropriate data type
+                    string username = reader.GetString(0);
+                    string password = reader.GetString(1);
+                    string stats = reader.GetString(2);
+                    //Host.DebugLog($"Found a user: {username} | {password}");
+
+                    int[] CleanedStats = new int[100];
+                    for (int i = 0; i < 100; i++)
+                    {
+                        string thisStat = stats.Substring(i * 8, 8); // get the next 8 characters starting from position i * 8
+                        //int result = Convert.ToInt32(thisStat, 16); // base 16 for hex
+
+                        byte[] bytes = new byte[4];
+
+                        // Convert the hex string to a byte array in little-endian order
+                        for (int j = 0; j < bytes.Length; j++)
+                        {
+                            bytes[j] = Convert.ToByte(thisStat.Substring(j * 2, 2), 16);
+                        }
+                        // Convert the byte array to an integer in little-endian order
+                        int result = BitConverter.ToInt32(bytes, 0);
+
+                        CleanedStats[i] = result;
+                        //Host.DebugLog($"Got stat: {result.ToString()}");
+                    }
+
+                    accounts.Add(new RoboAccount
+                    {
+                        Username = username,
+                        Password = password,
+                        AppId = 10684,
+                        Stats = CleanedStats
+                    });                   
+                }
+            }
+
+            return accounts;
+        }
+
         public void QueryDb() {
             SQLiteCommand sql_cmd = Sql_con.CreateCommand(); 
             string myQuery = "select username from users where account_id = 3;"; 
@@ -59,7 +111,18 @@ namespace Horizon.Plugin.UYA
         }
 
         public bool AccountExists(string username) {
-            return true;
+            Host.DebugLog("Querying Robo DB to check if username exists: " + username);
+            string sql = "select username from users where lower(username) = @username;"; 
+
+            using (var command = new SQLiteCommand(sql, Sql_con))
+            {
+                command.Parameters.AddWithValue("@username", username.ToLower());
+
+                string res = (string)command.ExecuteScalar();
+
+                Host.DebugLog($"Username exists in robo db? : {username} | {(res != null).ToString()}");
+                return res != null;
+            }            
         }
 
         public string GetPassword(string username) {
