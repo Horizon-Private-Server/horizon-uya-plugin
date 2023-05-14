@@ -44,7 +44,7 @@ namespace Horizon.Plugin.UYA
             if (RoboDb == null)
                 RoboDb = new RoboDatabase((Plugin)this);
 
-            SyncRoboDbToHorizon();
+            //SyncRoboDbToHorizon();
 
             host.RegisterAction(PluginEvent.TICK, OnTick);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_GET_POLICY, OnPlayerLoggedIn);
@@ -88,7 +88,7 @@ namespace Horizon.Plugin.UYA
                 //DebugLog($"Result: {task.ToString()}");
 
                 if (task.Result != null){
-                    DebugLog("Already exists!");
+                    //DebugLog("Already exists!");
                     continue;
                 }
 
@@ -105,6 +105,7 @@ namespace Horizon.Plugin.UYA
 
                 if (taskAccountCreate.Result == null) {
                     DebugLog($"ERROR! Not able to create: {account.ToString()}");
+                    continue;
                 }
                 AccountDTO accountResult = taskAccountCreate.Result;
                 int accountId = accountResult.AccountId;
@@ -159,6 +160,8 @@ namespace Horizon.Plugin.UYA
                 // If password = Robo hashed password, then change the password to be the robo encrypted PW?
                 string roboPassword = RoboDb.GetPassword(request.Username);
 
+                DebugLog($"Got robo pw: {roboPassword}");
+
                 //Check if account already exists in database
                 Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(request.Username, 10684); // Call the async method
                 task.Wait(); // Wait for the async method to complete
@@ -166,6 +169,9 @@ namespace Horizon.Plugin.UYA
                 if (task.Result == null){
                     return Task.CompletedTask;
                 }
+
+                DebugLog($"Got request pw: {request.Password}");
+
 
                 if (RoboDb.EncryptString(request.Password) != roboPassword) {
                     DebugLog("Passwords don't match!");
@@ -175,6 +181,8 @@ namespace Horizon.Plugin.UYA
                 // passwords match
                 request.Password = roboPassword;
             }
+
+            DebugLog("Returning!");
 
             return Task.CompletedTask;
         }

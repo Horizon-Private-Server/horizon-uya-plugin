@@ -21,9 +21,15 @@ RUN cp /server/*.dll /src/Horizon.Plugin.UYA.Dme/
 #====== Build DME
 WORKDIR /src/Horizon.Plugin.UYA
 RUN dotnet publish -c Release -o /out/medius
-#RUN rm -rf /out/medius/runtimes/osx-x64  
-#RUN rm -rf /out/medius/runtimes/win-x64  
-#RUN rm -rf /out/medius/runtimes/win-x86  
+
+RUN mv /out/medius/runtimes/linux-x64/native/SQLite.Interop.dll /out/medius/
+RUN rm -rf /out/medius/runtimes/osx-x64  
+RUN rm -rf /out/medius/runtimes/win-x64  
+RUN rm -rf /out/medius/runtimes/unix 
+RUN rm -rf /out/medius/runtimes/win-x86 
+RUN rm -rf /out/medius/runtimes/win-arm64  
+RUN rm -rf /out/medius/runtimes/win
+RUN rm -rf /out/medius/runtimes
 
 #===== Build MAS/MLS/NAT
 WORKDIR /src/Horizon.Plugin.UYA.Dme

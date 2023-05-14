@@ -53,6 +53,10 @@ namespace Horizon.Plugin.UYA
         public List<RoboAccount> DumpUsers() {
             List<RoboAccount> accounts = new List<RoboAccount>();
 
+            if (Sql_con == null) {
+                return accounts;
+            }
+
             // Create a command to select all rows from the table
             var command = new SQLiteCommand("SELECT username, password, ladderstatswide FROM users", Sql_con);
             
@@ -111,6 +115,9 @@ namespace Horizon.Plugin.UYA
         }
 
         public bool AccountExists(string username) {
+            if (Sql_con == null)
+                return false;
+
             Host.DebugLog("Querying Robo DB to check if username exists: " + username);
             string sql = "select username from users where lower(username) = @username;"; 
 
