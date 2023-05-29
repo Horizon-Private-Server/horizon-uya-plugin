@@ -33,6 +33,8 @@ namespace Horizon.Plugin.UYA
         public static RoboApi Api = null;
         public static RoboDatabase RoboDb = null;
 
+        
+
         public Task Start(string workingDirectory, IPluginHost host)
         {
             WorkingDirectory = workingDirectory;
@@ -44,7 +46,8 @@ namespace Horizon.Plugin.UYA
             if (RoboDb == null)
                 RoboDb = new RoboDatabase((Plugin)this);
 
-            //SyncRoboDbToHorizon();
+
+            SyncRoboDbToHorizon();
 
             host.RegisterAction(PluginEvent.TICK, OnTick);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_GET_POLICY, OnPlayerLoggedIn);
@@ -67,6 +70,25 @@ namespace Horizon.Plugin.UYA
 
         public void SyncRoboDbToHorizon() {
             DebugLog("Syncing robo db to horizon ...");
+
+            Task<Dictionary<string, string>> taskGetServerSettings = Server.Medius.Program.Database.GetServerSettings(10684); 
+            taskGetServerSettings.Wait(); 
+
+            if (taskGetServerSettings.Result == null){
+                DebugLog("No server settings found!");
+                return;
+            }
+
+            Dictionary<string, string> serverSettings = taskGetServerSettings.Result;
+            if (serverSettings.ContainsKey("RoboAccountsMigrated")) {
+                DebugLog("Robo accounts already migrated!");
+                return;
+            }
+            else {
+                DebugLog("Robo database not migrated yet!");
+            }
+
+
             List<RoboAccount> accounts = RoboDb.DumpUsers();
 
             DebugLog($"Found {accounts.Count} robo accounts!");
@@ -91,8 +113,6 @@ namespace Horizon.Plugin.UYA
                     //DebugLog("Already exists!");
                     continue;
                 }
-
-                totalAdded += 1;
 
                 Task<AccountDTO> taskAccountCreate = Server.Medius.Program.Database.CreateAccount(new CreateAccountDTO()
                 {
@@ -125,9 +145,17 @@ namespace Horizon.Plugin.UYA
                 {
                     DebugLog($"Exception trying to update stats on {account.ToString()}");
                     DebugLog(ex.ToString());
+                    continue;
                 }
+                totalAdded += 1;
+
             }
             DebugLog($"Added {totalAdded} / {accounts.Count} !");
+
+            serverSettings.Add("RoboAccountsMigrated", "True");
+
+            Task taskUpdate = Server.Medius.Program.Database.SetServerSettings(10684, serverSettings); 
+            taskUpdate.Wait(); 
 
             DebugLog("Done syncing Robo db to Horizon!");
         }
