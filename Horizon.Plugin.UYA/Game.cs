@@ -522,6 +522,7 @@ namespace Horizon.Plugin.UYA
         public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
         public bool DisableWeaponPacks { get; set; }
+        public byte V2s { get; set; }
 
         public byte[] Serialize()
         {
@@ -533,6 +534,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(MapOverride);
                     writer.Write(GamemodeOverride);
                     writer.Write(DisableWeaponPacks);
+                    writer.Write(V2s);
                 }
             }
 
@@ -543,7 +545,8 @@ namespace Horizon.Plugin.UYA
         {
             MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
-            DisableWeaponPacks = reader.ReadBoolean();
+            DisableWeaponPacks = reader.ReadByte();
+            V2s = reader.ReadBoolean();
         }
 
         public bool SameAs(GameConfig other)
@@ -551,6 +554,7 @@ namespace Horizon.Plugin.UYA
             return MapOverride == other.MapOverride
                 && GamemodeOverride == other.GamemodeOverride
                 && DisableWeaponPacks == other.DisableWeaponPacks
+                && V2s == other.V2s
                 ;
         }
     }
