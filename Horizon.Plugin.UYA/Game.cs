@@ -521,8 +521,8 @@ namespace Horizon.Plugin.UYA
     {
         public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
-        public bool DisableWeaponPacks { get; set; }
-        public byte V2s { get; set; }
+        public byte DisableWeaponPacks { get; set; }
+        public bool V2s { get; set; }
 
         public byte[] Serialize()
         {
