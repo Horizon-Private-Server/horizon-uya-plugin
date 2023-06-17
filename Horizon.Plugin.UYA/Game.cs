@@ -523,6 +523,7 @@ namespace Horizon.Plugin.UYA
         public byte GamemodeOverride { get; set; }
         public byte DisableWeaponPacks { get; set; }
         public bool V2s { get; set; }
+        public bool DisableHealthBoxes { get; set; }
 
         public byte[] Serialize()
         {
@@ -535,6 +536,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(GamemodeOverride);
                     writer.Write(DisableWeaponPacks);
                     writer.Write(V2s);
+                    writer.Write(DisableHealthBoxes);
                 }
             }
 
@@ -547,6 +549,7 @@ namespace Horizon.Plugin.UYA
             GamemodeOverride = reader.ReadByte();
             DisableWeaponPacks = reader.ReadByte();
             V2s = reader.ReadBoolean();
+            DisableHealthBoxes = reader.ReadBoolean();
         }
 
         public bool SameAs(GameConfig other)
@@ -555,6 +558,7 @@ namespace Horizon.Plugin.UYA
                 && GamemodeOverride == other.GamemodeOverride
                 && DisableWeaponPacks == other.DisableWeaponPacks
                 && V2s == other.V2s
+                && DisableHealthBoxes == other.DisableHealthBoxes
                 ;
         }
     }
