@@ -524,7 +524,8 @@ namespace Horizon.Plugin.UYA
         public byte DisableWeaponPacks { get; set; }
         public bool V2s { get; set; }
         public bool DisableHealthBoxes { get; set; }
-        public bool AutoRespawn { get; set; }
+        public byte AutoRespawn { get; set; }
+        public byte SetGattlingTurretHealth { get; set; }
 
         public byte[] Serialize()
         {
@@ -539,6 +540,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(V2s);
                     writer.Write(DisableHealthBoxes);
                     writer.Write(AutoRespawn);
+                    writer.Write(SetGattlingTurretHealth);
                 }
             }
 
@@ -552,7 +554,8 @@ namespace Horizon.Plugin.UYA
             DisableWeaponPacks = reader.ReadByte();
             V2s = reader.ReadBoolean();
             DisableHealthBoxes = reader.ReadBoolean();
-            AutoRespawn = reader.ReadBoolean();
+            AutoRespawn = reader.ReadByte();
+            SetGattlingTurretHealth = reader.ReadByte();
         }
 
         public bool SameAs(GameConfig other)
@@ -563,7 +566,7 @@ namespace Horizon.Plugin.UYA
                 && V2s == other.V2s
                 && DisableHealthBoxes == other.DisableHealthBoxes
                 && AutoRespawn == other.AutoRespawn
-
+                && SetGattlingTurretHealth == other.SetGattlingTurretHealth
                 ;
         }
     }
