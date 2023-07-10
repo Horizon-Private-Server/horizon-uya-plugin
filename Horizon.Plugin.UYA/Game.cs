@@ -526,6 +526,7 @@ namespace Horizon.Plugin.UYA
         public bool DisableHealthBoxes { get; set; }
         public byte AutoRespawn { get; set; }
         public byte SetGattlingTurretHealth { get; set; }
+        public byte ChargebootForever { get; set; }
 
         public byte[] Serialize()
         {
@@ -541,6 +542,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(DisableHealthBoxes);
                     writer.Write(AutoRespawn);
                     writer.Write(SetGattlingTurretHealth);
+                    writer.Write(ChargebootForever);
                 }
             }
 
@@ -556,6 +558,7 @@ namespace Horizon.Plugin.UYA
             DisableHealthBoxes = reader.ReadBoolean();
             AutoRespawn = reader.ReadByte();
             SetGattlingTurretHealth = reader.ReadByte();
+            ChargebootForever = reader.ReadByte();
         }
 
         public bool SameAs(GameConfig other)
@@ -567,6 +570,7 @@ namespace Horizon.Plugin.UYA
                 && DisableHealthBoxes == other.DisableHealthBoxes
                 && AutoRespawn == other.AutoRespawn
                 && SetGattlingTurretHealth == other.SetGattlingTurretHealth
+                && ChargebootForever == other.ChargebootForever
                 ;
         }
     }
