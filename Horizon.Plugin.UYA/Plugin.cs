@@ -63,6 +63,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
+            host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
@@ -403,6 +404,133 @@ namespace Horizon.Plugin.UYA
 
             return isCpu;
         }
+
+        public bool AccountIsLoggedIn(string username) {
+            Task<string> task = Server.Medius.Program.Database.GetPlayerList(); 
+            task.Wait(); 
+
+            if (task.Result == null){
+                DebugLog($"Nobody online!");
+                return false;
+            }
+
+            Log($"GOT PLAYERS: {task.Result}");
+
+            //JObject jsonObject = JsonConvert.DeserializeObject(metadata);
+            JArray jsonArray = JArray.Parse(task.Result);
+
+            foreach (JObject jsonObject in jsonArray.Children<JObject>())
+            {
+                JToken accountNameToken;
+                if (jsonObject.TryGetValue("AccountName", out accountNameToken))
+                {
+                    string accountName = accountNameToken.ToString();
+                    if (accountName == username)
+                        return true;
+                }
+            }
+
+            return false;
+
+        }
+
+
+        Task OnFindPlayerAccountName(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnFindPlayerRequestArgs)data;
+            if (msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+            Log("GOT FIND PLAYER ACCOUNT NAME!!!");
+            MediusFindPlayerRequest findPlayerRequest = (MediusFindPlayerRequest)msg.Request;
+
+            ClientObject Player = (ClientObject)msg.Player;
+
+            Server.Medius.Models.Game game = Player.CurrentGame;
+            if (game == null) {
+                return Task.CompletedTask;    
+            }
+
+            string bot_class = "bot4";
+            int bolt = 4;
+            string req_name = findPlayerRequest.Name.ToLower();
+
+            if (req_name.StartsWith("cpu0")) {
+                bot_class = "bot0";
+                bolt = 1;
+            }
+            else if (req_name.StartsWith("cpu1")) {
+                bot_class = "bot1";
+                bolt = 1;
+            }
+            else if (req_name.StartsWith("cpu2")) {
+                bot_class = "bot2";
+                bolt = 2;
+            }
+            else if (req_name.StartsWith("cpu3")) {
+                bot_class = "bot3";
+                bolt = 3;
+            }
+            else if (req_name.StartsWith("cpu4")) {
+                bot_class = "bot4";
+            }
+            else if (req_name.StartsWith("cpug")) {
+                bot_class = "botg";
+            }
+            else {
+                return Task.CompletedTask;
+            }
+
+
+            // Select the bot to use
+            Random random = new Random();
+            int randomNumber = random.Next(1, 999);
+            string formattedNumber = randomNumber.ToString("D3");
+
+            string username = "CPU-" + formattedNumber;
+
+            Log($"Testing: {username}");
+
+            while (AccountIsLoggedIn(username)) {
+                randomNumber = random.Next(1, 999);
+                formattedNumber = randomNumber.ToString("D3");
+                username = "CPU-" + formattedNumber;
+                Log($"Testing: {username}");
+            }
+
+            // Get the account id from the username
+            Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(username, 10684); // Call the async method
+            task.Wait(); // Wait for the async method to complete
+
+            //DebugLog($"Result: {task.ToString()}");
+
+            if (task.Result == null){
+                DebugLog("Couldn't find CPU ACCOUNT!");
+                return Task.CompletedTask;
+            }
+            AccountDTO acc = task.Result;
+            int account_id = acc.AccountId;
+
+            //int account_id = 880;
+            int world_id = game.DMEWorldId+1;
+
+            Log($"Got world id: {world_id}");
+            Log($"Got username: {username}");
+            Log($"Got account id: {account_id}");
+            Log($"Got bolt: {bolt}");
+            Log($"Got bot_class: {bot_class}");
+            
+            
+            Bot b = new Bot(this);
+            b.Trigger(account_id, bot_class, username, world_id, bolt);
+
+            // int account_id, string bot_class, string username, int world_id, int bolt
+
+
+            return Task.CompletedTask;
+        }
+
 
         Task OnPlayerJoinedGame(PluginEvent eventId, object data)
         {
