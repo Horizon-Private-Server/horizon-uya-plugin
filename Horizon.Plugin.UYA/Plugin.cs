@@ -17,6 +17,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 
 namespace Horizon.Plugin.UYA
@@ -60,6 +63,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
+            host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
@@ -138,7 +142,7 @@ namespace Horizon.Plugin.UYA
                         Stats = account.Stats
                     }); // Call the async method
 
-                    task.Wait(); // Wait for the async method to complete
+                    taskUpdateStats.Wait(); // Wait for the async method to complete
                     //DebugLog($"Update?: {taskUpdateStats.Result.ToString()}");
                 }
                 catch (Exception ex)
@@ -356,6 +360,177 @@ namespace Horizon.Plugin.UYA
 
             return Task.CompletedTask;
         }
+        
+
+        int[] ConvertStringListToIntegers(string s) {
+            string[] parts = s.Split(',');
+
+            int[] numbers = new int[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                bool success = int.TryParse(parts[i], out int number);
+                if (success)
+                {
+                    numbers[i] = number;
+                }
+                else
+                {
+                    Log($"Invalid number format: {parts[i]}");
+                }
+            }
+
+            return numbers;
+        }
+
+        bool IsCpuGameFromPlayerList(int[] accounts) {
+            // Regex.IsMatch(client.AccountName, @"^CPU-(?:[0-9]{3})$");
+            bool isCpu = false;
+            foreach (int accountId in accounts) {
+                // Task<AccountDTO> GetAccountById(int id)
+                Task<AccountDTO> getAccountTask = Server.Medius.Program.Database.GetAccountById(accountId); 
+                getAccountTask.Wait(); 
+
+                if (getAccountTask.Result == null){
+                    DebugLog($"No Account found for {accountId}");
+                    continue;
+                }
+
+                AccountDTO acc = getAccountTask.Result;
+                string username = acc.AccountName;
+
+                bool thisIsCpu = Regex.IsMatch(username, @"^CPU-(?:[0-9]{3})$");
+                isCpu = isCpu || thisIsCpu;
+            }
+
+            return isCpu;
+        }
+
+        public bool AccountIsLoggedIn(string username) {
+            Task<string> task = Server.Medius.Program.Database.GetPlayerList(); 
+            task.Wait(); 
+
+            if (task.Result == null){
+                DebugLog($"Nobody online!");
+                return false;
+            }
+
+            Log($"GOT PLAYERS: {task.Result}");
+
+            //JObject jsonObject = JsonConvert.DeserializeObject(metadata);
+            JArray jsonArray = JArray.Parse(task.Result);
+
+            foreach (JObject jsonObject in jsonArray.Children<JObject>())
+            {
+                JToken accountNameToken;
+                if (jsonObject.TryGetValue("AccountName", out accountNameToken))
+                {
+                    string accountName = accountNameToken.ToString();
+                    if (accountName == username)
+                        return true;
+                }
+            }
+
+            return false;
+
+        }
+
+
+        Task OnFindPlayerAccountName(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnFindPlayerRequestArgs)data;
+            if (msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+            Log("GOT FIND PLAYER ACCOUNT NAME!!!");
+            MediusFindPlayerRequest findPlayerRequest = (MediusFindPlayerRequest)msg.Request;
+
+            ClientObject Player = (ClientObject)msg.Player;
+
+            Server.Medius.Models.Game game = Player.CurrentGame;
+            if (game == null) {
+                return Task.CompletedTask;    
+            }
+
+            string bot_class = "bot4";
+            int bolt = 4;
+            string req_name = findPlayerRequest.Name.ToLower();
+
+            if (req_name.StartsWith("cpu0")) {
+                bot_class = "bot0";
+                bolt = 1;
+            }
+            else if (req_name.StartsWith("cpu1")) {
+                bot_class = "bot1";
+                bolt = 1;
+            }
+            else if (req_name.StartsWith("cpu2")) {
+                bot_class = "bot2";
+                bolt = 2;
+            }
+            else if (req_name.StartsWith("cpu3")) {
+                bot_class = "bot3";
+                bolt = 3;
+            }
+            else if (req_name.StartsWith("cpu4")) {
+                bot_class = "bot4";
+            }
+            else if (req_name.StartsWith("cpug")) {
+                bot_class = "botg";
+            }
+            else {
+                return Task.CompletedTask;
+            }
+
+
+            // Select the bot to use
+            Random random = new Random();
+            int randomNumber = random.Next(1, 999);
+            string formattedNumber = randomNumber.ToString("D3");
+
+            string username = "CPU-" + formattedNumber;
+
+            Log($"Testing: {username}");
+
+            while (AccountIsLoggedIn(username)) {
+                randomNumber = random.Next(1, 999);
+                formattedNumber = randomNumber.ToString("D3");
+                username = "CPU-" + formattedNumber;
+                Log($"Testing: {username}");
+            }
+
+            // Get the account id from the username
+            Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(username, 10684); // Call the async method
+            task.Wait(); // Wait for the async method to complete
+
+            //DebugLog($"Result: {task.ToString()}");
+
+            if (task.Result == null){
+                DebugLog("Couldn't find CPU ACCOUNT!");
+                return Task.CompletedTask;
+            }
+            AccountDTO acc = task.Result;
+            int account_id = acc.AccountId;
+
+            //int account_id = 880;
+            int world_id = game.DMEWorldId+1;
+
+            Log($"Got world id: {world_id}");
+            Log($"Got username: {username}");
+            Log($"Got account id: {account_id}");
+            Log($"Got bolt: {bolt}");
+            Log($"Got bot_class: {bot_class}");
+            
+            
+            Bot b = new Bot(this);
+            b.Trigger(account_id, bot_class, username, world_id, bolt);
+
+            // int account_id, string bot_class, string username, int world_id, int bolt
+
+
+            return Task.CompletedTask;
+        }
+
 
         Task OnPlayerJoinedGame(PluginEvent eventId, object data)
         {
@@ -369,12 +544,83 @@ namespace Horizon.Plugin.UYA
             var game = msg.Game;
             var playerExtraInfo = Player.GetPlayerExtraInfo(client.AccountId);
 
+            Server.Medius.Models.Game gameObj = msg.Game;
+            int[] players = ConvertStringListToIntegers(gameObj.GetActivePlayerList());
+
+            bool cpuGame = IsCpuGameFromPlayerList(players);
+            if (cpuGame)
+            {
+                Log("A CPU Joined the game! Setting players to CPU Game!");
+            }
+            UpdatePlayersMetadataToAddCPUGame(players, cpuGame);
+
             // reset map version
             playerExtraInfo.CurrentMapVersion = 0;
 
             // pass to game
             return Game.PlayerJoined(client, game);
         }
+
+
+       public void UpdatePlayersMetadataToAddCPUGame(int[] players, bool cpuGame) {
+            foreach (int accountId in players)
+            {
+                
+                JObject metadata = GetAccountMetadata(accountId);
+
+                if (metadata == null) {
+                    DebugLog($"No Metadata found for {accountId}");
+                    continue;
+                }
+
+                metadata["CpuGame"] = cpuGame;
+
+                PostAccountMetadata(accountId, metadata);
+            }
+       }
+
+    public JObject GetAccountMetadata(int accountId) {
+        Task<string> GetAccountMetadata = Server.Medius.Program.Database.GetAccountMetadata(accountId); 
+        GetAccountMetadata.Wait(); 
+
+        if (GetAccountMetadata.Result == null){
+            DebugLog($"No Metadata found for {accountId}");
+            JObject emptyObject = new JObject();
+            return emptyObject;
+        }
+
+        string metadata = GetAccountMetadata.Result;
+        Log($"Found metadata for account id {accountId}: {metadata}");
+
+
+        //JObject jsonObject = JsonConvert.DeserializeObject(metadata);
+        JObject jsonObject = JObject.Parse(metadata);
+
+
+        return jsonObject;
+    }
+
+    public void PostAccountMetadata(int accountId, JObject metadata) {
+        string updatedJsonString = JsonConvert.SerializeObject(metadata);
+        Log($"Posting metadata: {updatedJsonString}");
+
+        try
+        {
+            Task<bool> taskUpdateMetadata = Server.Medius.Program.Database.PostAccountMetadata(
+                accountId,
+                updatedJsonString
+            ); // Call the async method
+
+            taskUpdateMetadata.Wait(); // Wait for the async method to complete
+            Log("Metadata updated!");
+        }
+        catch (Exception ex)
+        {
+            DebugLog($"Exception trying to metadata on account id {accountId}");
+            DebugLog(ex.ToString());
+            return;
+        }
+    }
 
         Task OnPlayerPostWideStats(PluginEvent eventId, object data)
         {
@@ -383,6 +629,23 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
                 return Task.CompletedTask;
+
+
+            // Check if it's a bot game. If it is, then ignore
+            // Get the player's metadata. Then 
+            JObject metadata = GetAccountMetadata(msg.Player.AccountId);
+            if (metadata != null) {
+                if ((bool)metadata["CpuGame"]) {
+                    Log("Ignoring CPU GAME STATS!");
+                    // MediusUpdateLadderStatsWideRequest updateLadderStatsWideRequest = (MediusUpdateLadderStatsWideRequest)msg.Request;
+                    // updateLadderStatsWideRequest.LadderType = null;
+                    msg.Reject = true;
+                    return Task.CompletedTask;
+                }
+            }
+
+
+
 
             // pass to game
             return Game.OnPlayerPostWideStats(msg);
