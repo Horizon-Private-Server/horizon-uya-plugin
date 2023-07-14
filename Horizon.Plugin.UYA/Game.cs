@@ -521,12 +521,13 @@ namespace Horizon.Plugin.UYA
     {
         public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
-        public byte DisableWeaponPacks { get; set; }
-        public bool V2s { get; set; }
-        public bool DisableHealthBoxes { get; set; }
-        public byte AutoRespawn { get; set; }
-        public byte SetGattlingTurretHealth { get; set; }
-        public byte ChargebootForever { get; set; }
+        public byte grDisableWeaponPacks { get; set; }
+        public bool grV2s { get; set; }
+        public bool grDisableHealthBoxes { get; set; }
+        public bool grAutoRespawn { get; set; }
+        public bool grSetGattlingTurretHealth { get; set; }
+        public byte grVampire { get; set; }
+        public byte prChargebootForever { get; set; }
 
         public byte[] Serialize()
         {
@@ -537,12 +538,13 @@ namespace Horizon.Plugin.UYA
                 {
                     writer.Write(MapOverride);
                     writer.Write(GamemodeOverride);
-                    writer.Write(DisableWeaponPacks);
-                    writer.Write(V2s);
-                    writer.Write(DisableHealthBoxes);
-                    writer.Write(AutoRespawn);
-                    writer.Write(SetGattlingTurretHealth);
-                    writer.Write(ChargebootForever);
+                    writer.Write(grDisableWeaponPacks);
+                    writer.Write(grV2s);
+                    writer.Write(grDisableHealthBoxes);
+                    writer.Write(grAutoRespawn);
+                    writer.Write(grSetGattlingTurretHealth);
+                    writer.Write(grVampire);
+                    writer.Write(prChargebootForever);
                 }
             }
 
@@ -553,24 +555,26 @@ namespace Horizon.Plugin.UYA
         {
             MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
-            DisableWeaponPacks = reader.ReadByte();
-            V2s = reader.ReadBoolean();
-            DisableHealthBoxes = reader.ReadBoolean();
-            AutoRespawn = reader.ReadByte();
-            SetGattlingTurretHealth = reader.ReadByte();
-            ChargebootForever = reader.ReadByte();
+            grDisableWeaponPacks = reader.ReadByte();
+            grV2s = reader.ReadBoolean();
+            grDisableHealthBoxes = reader.ReadBoolean();
+            grAutoRespawn = reader.ReadBoolean();
+            grSetGattlingTurretHealth = reader.ReadBoolean();
+            grVampire = reader.ReadByte();
+            prChargebootForever = reader.ReadBoolean();
         }
 
         public bool SameAs(GameConfig other)
         {
             return MapOverride == other.MapOverride
                 && GamemodeOverride == other.GamemodeOverride
-                && DisableWeaponPacks == other.DisableWeaponPacks
-                && V2s == other.V2s
-                && DisableHealthBoxes == other.DisableHealthBoxes
-                && AutoRespawn == other.AutoRespawn
-                && SetGattlingTurretHealth == other.SetGattlingTurretHealth
-                && ChargebootForever == other.ChargebootForever
+                && grDisableWeaponPacks == other.grDisableWeaponPacks
+                && grV2s == other.grV2s
+                && grDisableHealthBoxes == other.grDisableHealthBoxes
+                && grAutoRespawn == other.grAutoRespawn
+                && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
+                && grVampire == other.grVampire
+                && prChargebootForever == other.prChargebootForever
                 ;
         }
     }
