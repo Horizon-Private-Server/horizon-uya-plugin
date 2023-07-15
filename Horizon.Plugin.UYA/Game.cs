@@ -527,7 +527,7 @@ namespace Horizon.Plugin.UYA
         public bool grAutoRespawn { get; set; }
         public bool grSetGattlingTurretHealth { get; set; }
         public byte grVampire { get; set; }
-        public byte prChargebootForever { get; set; }
+        public bool prChargebootForever { get; set; }
 
         public byte[] Serialize()
         {
