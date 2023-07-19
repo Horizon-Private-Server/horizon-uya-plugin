@@ -527,6 +527,7 @@ namespace Horizon.Plugin.UYA
         public bool grAutoRespawn { get; set; }
         public bool grSetGattlingTurretHealth { get; set; }
         public byte grVampire { get; set; }
+        public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
 
         public byte[] Serialize()
@@ -544,6 +545,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
                     writer.Write(grVampire);
+                    writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
                 }
             }
@@ -561,6 +563,7 @@ namespace Horizon.Plugin.UYA
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadBoolean();
             grVampire = reader.ReadByte();
+            prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
         }
 
@@ -574,6 +577,7 @@ namespace Horizon.Plugin.UYA
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
                 && grVampire == other.grVampire
+                && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
                 ;
         }
