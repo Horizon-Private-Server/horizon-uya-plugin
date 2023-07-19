@@ -33,7 +33,8 @@ namespace Horizon.Plugin.UYA
             10684, // NTSC
         };
 
-        public static RoboApi Api = null;
+        // Disable for now.
+        //public static RoboApi Api = null;
         public static RoboDatabase RoboDb = null;
 
         
@@ -43,8 +44,8 @@ namespace Horizon.Plugin.UYA
             WorkingDirectory = workingDirectory;
             Host = host;
 
-            if (Api == null)
-                Api = new RoboApi((Plugin)this);
+            // if (Api == null)
+            //     Api = new RoboApi((Plugin)this);
 
             if (RoboDb == null)
                 RoboDb = new RoboDatabase((Plugin)this);
@@ -406,32 +407,11 @@ namespace Horizon.Plugin.UYA
         }
 
         public bool AccountIsLoggedIn(string username) {
-            Task<string> task = Server.Medius.Program.Database.GetPlayerList(); 
-            task.Wait(); 
-
-            if (task.Result == null){
-                DebugLog($"Nobody online!");
+            ClientObject test = Server.Medius.Program.Manager.GetClientByAccountName(username, 10684); 
+            if (test == null) {
                 return false;
             }
-
-            Log($"GOT PLAYERS: {task.Result}");
-
-            //JObject jsonObject = JsonConvert.DeserializeObject(metadata);
-            JArray jsonArray = JArray.Parse(task.Result);
-
-            foreach (JObject jsonObject in jsonArray.Children<JObject>())
-            {
-                JToken accountNameToken;
-                if (jsonObject.TryGetValue("AccountName", out accountNameToken))
-                {
-                    string accountName = accountNameToken.ToString();
-                    if (accountName == username)
-                        return true;
-                }
-            }
-
-            return false;
-
+            return true;
         }
 
 
