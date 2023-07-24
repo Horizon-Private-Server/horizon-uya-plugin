@@ -22,6 +22,7 @@ namespace Horizon.Plugin.UYA
         static readonly CustomMap[] CustomMaps = new CustomMap[]
         {
             new CustomMap(CustomMapId.CMAP_ID_MARAXUS_PRISON, "Maraxus Prison", "maraxus", 40),
+            new CustomMap(CustomMapId.CMAP_ID_SARATHOS_SWAMP, "Sarathos Swamp", "sarathos", 41),        
         };
 
         public static CustomMap FindCustomMapById(CustomMapId id)
@@ -80,23 +81,23 @@ namespace Horizon.Plugin.UYA
 
     public enum MapId : byte
     {
-        BATTLEDOME = 41,
-        CATACROM = 42,
-        SARATHOS = 44,
-        DARK_CATHEDRAL = 45,
-        SHAAR = 46,
-        VALIX = 47,
-        MINING_FACILITY = 48,
-        TORVAL = 50,
-        TEMPUS = 51,
-        MARAXUS = 53,
-        GHOST_STATION = 54
+        BAKISI = 40,
+        HOVEN = 41,
+        OUTPOST_X12 = 42,
+        KORGON = 43,
+        METROPOLIS = 44,
+        BLACKWATER_CITY = 45,
+        COMMAND_CENTER = 46,
+        BLACKWATER_DOCKS = 47,
+        AQUATOS_SEWERS = 48,
+        MARCADIA = 49,
     }
 
     public enum CustomMapId : byte
     {
         // custom map ids
         CMAP_ID_MARAXUS_PRISON = 1,
+        CMAP_ID_SARATHOS_SWAMP = 2,
     }
 
     public class CustomMap
