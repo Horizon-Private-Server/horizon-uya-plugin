@@ -15,9 +15,7 @@ namespace Horizon.Plugin.UYA
             "Yellow",
             "Purple",
             "Aqua",
-            "Pink",
-            "Olive",
-            "Maroon"
+            "Pink"
         };
         public const int ACCOUNTSTATS_MAXLEN = 256;
 

@@ -521,7 +521,7 @@ namespace Horizon.Plugin.UYA
     {
         public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
-        public byte grDisableWeaponPacks { get; set; }
+        public bool grDisableWeaponPacks { get; set; }
         public bool grV2s { get; set; }
         public bool grDisableHealthBoxes { get; set; }
         public bool grAutoRespawn { get; set; }
@@ -557,7 +557,7 @@ namespace Horizon.Plugin.UYA
         {
             MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
-            grDisableWeaponPacks = reader.ReadByte();
+            grDisableWeaponPacks = reader.ReadBoolean();
             grV2s = reader.ReadBoolean();
             grDisableHealthBoxes = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
