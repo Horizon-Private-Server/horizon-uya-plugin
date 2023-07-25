@@ -521,6 +521,8 @@ namespace Horizon.Plugin.UYA
     {
         public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
+        public byte grRespawnTimer { get; set; }
+        public bool grDisablePenaltyTimers { get; set; }
         public bool grDisableWeaponPacks { get; set; }
         public bool grV2s { get; set; }
         public bool grDisableHealthBoxes { get; set; }
@@ -539,6 +541,8 @@ namespace Horizon.Plugin.UYA
                 {
                     writer.Write(MapOverride);
                     writer.Write(GamemodeOverride);
+                    writer.Write(grRespawnTimer);
+                    writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
                     writer.Write(grDisableHealthBoxes);
@@ -557,6 +561,8 @@ namespace Horizon.Plugin.UYA
         {
             MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
+            grRespawnTimer = reader.ReadByte();
+            grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadBoolean();
             grV2s = reader.ReadBoolean();
             grDisableHealthBoxes = reader.ReadBoolean();
@@ -571,6 +577,8 @@ namespace Horizon.Plugin.UYA
         {
             return MapOverride == other.MapOverride
                 && GamemodeOverride == other.GamemodeOverride
+                && grRespawnTimer == other.grRespawnTimer
+                && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
