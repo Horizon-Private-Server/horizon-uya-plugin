@@ -129,7 +129,8 @@ namespace Horizon.Plugin.UYA
 
     public class PlayerConfig
     {
-        public bool EnableInfiniteHealthAndMoonjump { get; set; }
+        public bool enableAutoMaps { get; set; }
+        public bool disableCameraShake { get; set; }
 
         public byte[] Serialize()
         {
@@ -138,7 +139,8 @@ namespace Horizon.Plugin.UYA
             {
                 using (var writer = new BinaryWriter(ms))
                 {
-                    writer.Write(EnableInfiniteHealthAndMoonjump);
+                    writer.Write(enableAutoMaps);
+                    writer.Write(disableCameraShake);
                 }
             }
 
@@ -147,7 +149,8 @@ namespace Horizon.Plugin.UYA
 
         public void Deserialize(BinaryReader reader)
         {
-            EnableInfiniteHealthAndMoonjump = reader.ReadBoolean();
+            enableAutoMaps = reader.ReadBoolean();
+            disableCameraShake = reader.ReadBoolean();
         }
     }
 }
