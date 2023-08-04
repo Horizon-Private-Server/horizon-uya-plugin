@@ -528,6 +528,7 @@ namespace Horizon.Plugin.UYA
         public bool grDisableHealthBoxes { get; set; }
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
+        public bool grAllowDrones { get; set; }
         public byte grVampire { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
@@ -548,6 +549,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisableHealthBoxes);
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
+                    writer.Write(grAllowDrones);
                     writer.Write(grVampire);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
@@ -568,6 +570,7 @@ namespace Horizon.Plugin.UYA
             grDisableHealthBoxes = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
+            grAllowDrones = reader.ReadBoolean();
             grVampire = reader.ReadByte();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
@@ -584,6 +587,7 @@ namespace Horizon.Plugin.UYA
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
+                && grAllowDrones == other.grAllowDrones
                 && grVampire == other.grVampire
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
