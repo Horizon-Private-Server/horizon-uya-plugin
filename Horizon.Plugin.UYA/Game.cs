@@ -408,16 +408,16 @@ namespace Horizon.Plugin.UYA
             TeamsEnabled = reader.ReadInt32() != 0;
             RoundNumber = reader.ReadInt32();
 
-            TeamScores = new short[10];
-            for (int i = 0; i < 10; ++i)
+            TeamScores = new short[8];
+            for (int i = 0; i < 8; ++i)
                 TeamScores[i] = reader.ReadInt16();
 
-            ClientIds = new sbyte[10];
-            for (int i = 0; i < 10; ++i)
+            ClientIds = new sbyte[8];
+            for (int i = 0; i < 8; ++i)
                 ClientIds[i] = reader.ReadSByte();
 
-            Teams = new sbyte[10];
-            for (int i = 0; i < 10; ++i)
+            Teams = new sbyte[8];
+            for (int i = 0; i < 8; ++i)
                 Teams[i] = reader.ReadSByte();
         }
 
@@ -426,7 +426,7 @@ namespace Horizon.Plugin.UYA
             writer.Write(TeamsEnabled ? 1 : 0);
             writer.Write(RoundNumber);
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 8; ++i)
             {
                 if (TeamScores == null || i >= TeamScores.Length)
                     writer.Write((short)0);
@@ -434,7 +434,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(TeamScores[i]);
             }
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 8; ++i)
             {
                 if (ClientIds == null || i >= ClientIds.Length)
                     writer.Write((sbyte)0);
@@ -442,7 +442,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(ClientIds[i]);
             }
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 8; ++i)
             {
                 if (Teams == null || i >= Teams.Length)
                     writer.Write((sbyte)0);
@@ -468,9 +468,9 @@ namespace Horizon.Plugin.UYA
             TeamsEnabled = packedGameState.TeamsEnabled;
             RoundNumber = packedGameState.RoundNumber;
 
-            var clientIdCounter = new int[10];
+            var clientIdCounter = new int[8];
 
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 8; ++i)
             {
                 var clientId = packedGameState.ClientIds[i];
                 var teamId = packedGameState.Teams[i];
@@ -535,7 +535,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[14];
+            byte[] output = new byte[16];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
