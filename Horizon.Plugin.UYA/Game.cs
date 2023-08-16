@@ -529,6 +529,9 @@ namespace Horizon.Plugin.UYA
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
         public bool grAllowDrones { get; set; }
+        public bool grNoBaseDefense_Bots { get; set; }
+        public bool grNoBaseDefense_SmallTurrets { get; set; }
+        public bool grBaseHealthPadActive { get; set; }
         public byte grVampire { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
@@ -550,6 +553,9 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
                     writer.Write(grAllowDrones);
+                    writer.Write(grNoBaseDefense_Bots);
+                    writer.Write(grNoBaseDefense_SmallTurrets);
+                    writer.Write(grBaseHealthPadActive);
                     writer.Write(grVampire);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
@@ -571,6 +577,9 @@ namespace Horizon.Plugin.UYA
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
             grAllowDrones = reader.ReadBoolean();
+            grNoBaseDefense_Bots = reader.ReadBoolean();
+            grNoBaseDefense_SmallTurrets = reader.ReadBoolean();
+            grBaseHealthPadActive = reader.ReadBoolean();
             grVampire = reader.ReadByte();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
@@ -588,6 +597,9 @@ namespace Horizon.Plugin.UYA
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
                 && grAllowDrones == other.grAllowDrones
+                && grNoBaseDefense_Bots == other.grNoBaseDefense_Bots
+                && grNoBaseDefense_SmallTurrets == other.grNoBaseDefense_SmallTurrets
+                && grBaseHealthPadActive == other.grBaseHealthPadActive
                 && grVampire == other.grVampire
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
