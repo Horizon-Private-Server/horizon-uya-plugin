@@ -16,7 +16,7 @@ namespace Horizon.Plugin.UYA.Dme
     {
 
         public static ConcurrentQueue<String> Outgoing = new ConcurrentQueue<String>();
-        public static HashSet<WebSocketClient> websocketConnections = new HashSet<WebSocketClient>();
+        public static ConcurrentDictionary<WebSocketClient, byte> websocketConnections = new ConcurrentDictionary<WebSocketClient, byte>();
 
         public static WebSocketListener Server = null;
         private Plugin plugin;
@@ -86,42 +86,72 @@ namespace Horizon.Plugin.UYA.Dme
         }
 
 
-        public static async void DequeueTask()
+
+        public async Task DequeueTask()
         {
+            int ticker = 1;
+            try {
+                while (true)
+                            {
+                                try {
+                                    if (ticker == 1000) {
+                                        plugin.Log(InternalLogLevel.INFO, $"Ticking! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                                        ticker = 1;
+                                    }
+                                    ticker +=1 ;
+                                    if (Outgoing.Count != 0) {
+                                            String formatted = null;
+                                            Outgoing.TryDequeue(out formatted);
 
-            while (true)
-            {
-                if (Outgoing.Count != 0) {
-                    String formatted = null;
-                    Outgoing.TryDequeue(out formatted);
+                                            if (formatted == null) {
+                                                plugin.Log(InternalLogLevel.INFO, $"Trying to send failing dequeue! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                                            }
 
+                                            List<WebSocketClient> ToRemove = new List<WebSocketClient>();
+                                            foreach (var client in websocketConnections.Keys)
+                                            {
 
-                    List<WebSocketClient> ToRemove = new List<WebSocketClient>();
-                    foreach (var client in websocketConnections)
-                    {
+                                                if (!client.IsConnected())
+                                                {
+                                                    ToRemove.Add(client);
+                                                    plugin.Log(InternalLogLevel.INFO, $"Disconnected websocket! Total websocket clients: {websocketConnections.Count-ToRemove.Count}");
+                                                }
+                                                else
+                                                {
+                                                    if (formatted != null) {
+                                                        try
+                                                        {
+                                                            await client.send(formatted);
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            ToRemove.Add(client);
+                                                            plugin.Log(InternalLogLevel.INFO, $"Error sending data! Removing client! Total websocket clients: {websocketConnections.Count-ToRemove.Count}");
+                                                        }
+                                                    }
 
-                        if (!client.IsConnected())
-                        {
-                            Console.WriteLine("Disconnected websocket!");
-                            ToRemove.Add(client);
-                        }
-                        else
-                        {
-                            await client.send(formatted);
-                        }
-                    }
+                                                }
+                                            }
 
-                    foreach (var remove in ToRemove)
-                        websocketConnections.Remove(remove);
-                }
-
-                await Task.Delay(1);
-
+                                            foreach (var remove in ToRemove)
+                                                websocketConnections.TryRemove(remove, out _);
+                                        }
+                                }
+                                catch (Exception ex)
+                                {
+                                    plugin.Log(InternalLogLevel.INFO, $"Error sending data! Removing client! Total websocket clients: {websocketConnections.Count} | Error: {ex.ToString()}");
+                                }
+                                await Task.Delay(1);
+                            }
             }
-
+            catch (Exception ex)
+            {
+                plugin.Log(InternalLogLevel.INFO, $"Error AWAITING!: {websocketConnections.Count} | Error: {ex.ToString()}");
+            }
+            
         }
 
-        public static async void AcceptWebSocketClients()
+        public async Task AcceptWebSocketClients()
         {
             CancellationToken c = new CancellationToken();
             while (true)
@@ -130,8 +160,10 @@ namespace Horizon.Plugin.UYA.Dme
                 if (socket != null)
                 {
                     WebSocketClient socketClient = new WebSocketClient(socket);
-                    websocketConnections.Add(socketClient);
-                }
+                    websocketConnections.TryAdd(socketClient, 0);
+                    plugin.Log(InternalLogLevel.INFO, $"New client added to websockets! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                }                
+                await Task.Delay(1);
             }
         }
 
