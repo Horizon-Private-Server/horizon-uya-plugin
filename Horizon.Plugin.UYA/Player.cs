@@ -131,16 +131,18 @@ namespace Horizon.Plugin.UYA
     {
         public bool enableAutoMaps { get; set; }
         public bool disableCameraShake { get; set; }
+        public byte levelOfDetail { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[2];
+            byte[] output = new byte[3];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
                 {
                     writer.Write(enableAutoMaps);
                     writer.Write(disableCameraShake);
+                    writer.Write(levelOfDetail);
                 }
             }
 
@@ -151,6 +153,7 @@ namespace Horizon.Plugin.UYA
         {
             enableAutoMaps = reader.ReadBoolean();
             disableCameraShake = reader.ReadBoolean();
+            levelOfDetail = reader.ReadByte();
         }
     }
 }
