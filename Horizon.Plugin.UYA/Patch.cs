@@ -1,5 +1,6 @@
 ﻿using RT.Models;
 using Server.Common;
+using Server.Common.Stream;
 using Server.Medius.Models;
 using System;
 using System.Collections.Generic;
@@ -257,7 +258,7 @@ namespace Horizon.Plugin.UYA
             byte[] output = new byte[16];
             using (var ms = new MemoryStream(output, true))
             {
-                using (var writer = new BinaryWriter(ms))
+                using (var writer = new MessageWriter(ms))
                 {
                     writer.Write(Type);
                     writer.Write(GameEntrypoint);
@@ -269,7 +270,7 @@ namespace Horizon.Plugin.UYA
             return output;
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(MessageReader reader)
         {
             Type = reader.Read<PatchModuleEntryType>();
             GameEntrypoint = reader.ReadUInt32();

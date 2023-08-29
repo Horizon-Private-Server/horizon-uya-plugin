@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using RT.Common;
 using Server.Common;
+using Server.Common.Stream;
 using Server.Medius.Models;
 using Server.Medius.PluginArgs;
 using System;
@@ -403,7 +404,7 @@ namespace Horizon.Plugin.UYA
         public sbyte[] Teams { get; set; }
 
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(MessageReader reader)
         {
             TeamsEnabled = reader.ReadInt32() != 0;
             RoundNumber = reader.ReadInt32();
@@ -421,7 +422,7 @@ namespace Horizon.Plugin.UYA
                 Teams[i] = reader.ReadSByte();
         }
 
-        public void Serialize(BinaryWriter writer)
+        public void Serialize(MessageWriter writer)
         {
             writer.Write(TeamsEnabled ? 1 : 0);
             writer.Write(RoundNumber);
@@ -514,7 +515,7 @@ namespace Horizon.Plugin.UYA
 
     public interface ICustomGameData
     {
-        void Deserialize(BinaryReader reader);
+        void Deserialize(MessageReader reader);
     }
 
     public class GameConfig
@@ -541,7 +542,7 @@ namespace Horizon.Plugin.UYA
             byte[] output = new byte[19];
             using (var ms = new MemoryStream(output, true))
             {
-                using (var writer = new BinaryWriter(ms))
+                using (var writer = new MessageWriter(ms))
                 {
                     writer.Write(MapOverride);
                     writer.Write(GamemodeOverride);
@@ -565,7 +566,7 @@ namespace Horizon.Plugin.UYA
             return output;
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(MessageReader reader)
         {
             MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
