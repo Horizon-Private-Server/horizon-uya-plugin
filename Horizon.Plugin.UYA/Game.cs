@@ -526,6 +526,7 @@ namespace Horizon.Plugin.UYA
         public bool grDisablePenaltyTimers { get; set; }
         public byte grDisableWeaponPacks { get; set; }
         public bool grV2s { get; set; }
+        public bool grNoCooldown { get; set; }
         public bool grDisableHealthBoxes { get; set; }
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
@@ -539,7 +540,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[19];
+            byte[] output = new byte[20];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -550,6 +551,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
+                    writer.Write(grNoCooldown);
                     writer.Write(grDisableHealthBoxes);
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
@@ -574,6 +576,7 @@ namespace Horizon.Plugin.UYA
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadByte();
             grV2s = reader.ReadBoolean();
+            grNoCooldown = reader.ReadBoolean();
             grDisableHealthBoxes = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
@@ -594,6 +597,7 @@ namespace Horizon.Plugin.UYA
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
+                && grNoCooldown == other.grNoCooldown
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
