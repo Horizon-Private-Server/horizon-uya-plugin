@@ -542,7 +542,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[22];
+            byte[] output = new byte[19];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -612,8 +612,8 @@ namespace Horizon.Plugin.UYA
                 && grNoBaseDefense_SmallTurrets == other.grNoBaseDefense_SmallTurrets
                 && grBaseHealthPadActive == other.grBaseHealthPadActive
                 && grVampire == other.grVampire
-                && grFluxShotsAlwaysHit = other.grFluxShotsAlwaysHit
-                && grFluxNikingDisabled = other.grFluxNikingDisabled
+                && grFluxShotsAlwaysHit == other.grFluxShotsAlwaysHit
+                && grFluxNikingDisabled == other.grFluxNikingDisabled
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
                 ;
