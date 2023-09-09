@@ -535,12 +535,14 @@ namespace Horizon.Plugin.UYA
         public bool grNoBaseDefense_SmallTurrets { get; set; }
         public bool grBaseHealthPadActive { get; set; }
         public byte grVampire { get; set; }
+        public bool grFluxShotsAlwaysHit { get; set; }
+        public bool grFluxNikingDisabled { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[20];
+            byte[] output = new byte[22];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -560,6 +562,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grNoBaseDefense_SmallTurrets);
                     writer.Write(grBaseHealthPadActive);
                     writer.Write(grVampire);
+                    writer.Write(grFluxShotsAlwaysHit);
+                    writer.Write(grFluxNikingDisabled);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
                 }
@@ -585,6 +589,8 @@ namespace Horizon.Plugin.UYA
             grNoBaseDefense_SmallTurrets = reader.ReadBoolean();
             grBaseHealthPadActive = reader.ReadBoolean();
             grVampire = reader.ReadByte();
+            grFluxShotsAlwaysHit = reader.ReadBoolean();
+            grFluxNikingDisabled = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
         }
@@ -606,6 +612,8 @@ namespace Horizon.Plugin.UYA
                 && grNoBaseDefense_SmallTurrets == other.grNoBaseDefense_SmallTurrets
                 && grBaseHealthPadActive == other.grBaseHealthPadActive
                 && grVampire == other.grVampire
+                && grFluxShotsAlwaysHit = other.grFluxShotsAlwaysHit
+                && grFluxNikingDisabled = other.grFluxNikingDisabled
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
                 ;
