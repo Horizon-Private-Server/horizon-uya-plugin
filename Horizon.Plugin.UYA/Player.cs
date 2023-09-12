@@ -132,10 +132,12 @@ namespace Horizon.Plugin.UYA
         public bool enableAutoMaps { get; set; }
         public bool disableCameraShake { get; set; }
         public byte levelOfDetail { get; set; }
+        public bool enableFpsCounter { get; set; }
+        public byte playerFov { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[3];
+            byte[] output = new byte[5];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -143,6 +145,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableAutoMaps);
                     writer.Write(disableCameraShake);
                     writer.Write(levelOfDetail);
+                    writer.Write(enableFpsCounter);
+                    writer.Write(playerFov);
                 }
             }
 
@@ -154,6 +158,8 @@ namespace Horizon.Plugin.UYA
             enableAutoMaps = reader.ReadBoolean();
             disableCameraShake = reader.ReadBoolean();
             levelOfDetail = reader.ReadByte();
+            enableFpsCounter = reader.ReadBoolean();
+            playerFov = reader.ReadByte();
         }
     }
 }
