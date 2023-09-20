@@ -525,7 +525,7 @@ namespace Horizon.Plugin.UYA
         public byte grRespawnTimer { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
         public byte grDisableWeaponPacks { get; set; }
-        public bool grV2s { get; set; }
+        public byte grV2s { get; set; }
         public bool grNoCooldown { get; set; }
         public bool grDisableHealthBoxes { get; set; }
         public bool grAutoRespawn { get; set; }
@@ -579,7 +579,7 @@ namespace Horizon.Plugin.UYA
             grRespawnTimer = reader.ReadByte();
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadByte();
-            grV2s = reader.ReadBoolean();
+            grV2s = reader.ReadByte();
             grNoCooldown = reader.ReadBoolean();
             grDisableHealthBoxes = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
