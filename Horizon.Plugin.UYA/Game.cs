@@ -528,6 +528,8 @@ namespace Horizon.Plugin.UYA
         public byte grV2s { get; set; }
         public bool grNoCooldown { get; set; }
         public bool grDisableHealthBoxes { get; set; }
+        public bool grDisableWeaponCrates { get; set; }
+        public bool grDisableAmmoPickups { get; set; }
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
         public bool grAllowDrones { get; set; }
@@ -542,7 +544,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[22];
+            byte[] output = new byte[24];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -555,6 +557,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grV2s);
                     writer.Write(grNoCooldown);
                     writer.Write(grDisableHealthBoxes);
+                    writer.Write(grDisableWeaponCrates);
+                    writer.Write(grDisableAmmoPickups);
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
                     writer.Write(grAllowDrones);
@@ -582,6 +586,8 @@ namespace Horizon.Plugin.UYA
             grV2s = reader.ReadByte();
             grNoCooldown = reader.ReadBoolean();
             grDisableHealthBoxes = reader.ReadBoolean();
+            grDisableWeaponCrates = reader.ReadBoolean();
+            grDisableAmmoPickups = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
             grAllowDrones = reader.ReadBoolean();
@@ -605,6 +611,8 @@ namespace Horizon.Plugin.UYA
                 && grV2s == other.grV2s
                 && grNoCooldown == other.grNoCooldown
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
+                && grDisableWeaponCrates == other.grDisableWeaponCrates
+                && grDisableAmmoPickups == other.grDisableAmmoPickups
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
                 && grAllowDrones == other.grAllowDrones
