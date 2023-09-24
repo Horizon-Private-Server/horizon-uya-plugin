@@ -532,7 +532,8 @@ namespace Horizon.Plugin.UYA
         public bool grDisableAmmoPickups { get; set; }
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
-        public bool grAllowDrones { get; set; }
+        public bool grDisableDrones { get; set; }
+        public bool grDisablePlayerTurret { get; set; }
         public bool grNoBaseDefense_Bots { get; set; }
         public bool grNoBaseDefense_SmallTurrets { get; set; }
         public bool grBaseHealthPadActive { get; set; }
@@ -544,7 +545,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[24];
+            byte[] output = new byte[25];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -561,7 +562,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisableAmmoPickups);
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
-                    writer.Write(grAllowDrones);
+                    writer.Write(grDisableDrones);
+                    writer.Write(grDisablePlayerTurret);
                     writer.Write(grNoBaseDefense_Bots);
                     writer.Write(grNoBaseDefense_SmallTurrets);
                     writer.Write(grBaseHealthPadActive);
@@ -590,7 +592,8 @@ namespace Horizon.Plugin.UYA
             grDisableAmmoPickups = reader.ReadBoolean();
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
-            grAllowDrones = reader.ReadBoolean();
+            grDisableDrones = reader.ReadBoolean();
+            grDisablePlayerTurret = reader.ReadBoolean();
             grNoBaseDefense_Bots = reader.ReadBoolean();
             grNoBaseDefense_SmallTurrets = reader.ReadBoolean();
             grBaseHealthPadActive = reader.ReadBoolean();
@@ -615,7 +618,8 @@ namespace Horizon.Plugin.UYA
                 && grDisableAmmoPickups == other.grDisableAmmoPickups
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
-                && grAllowDrones == other.grAllowDrones
+                && grDisableDrones == other.grDisableDrones
+                && grDisablePlayerTurret == other.grDisablePlayerTurret
                 && grNoBaseDefense_Bots == other.grNoBaseDefense_Bots
                 && grNoBaseDefense_SmallTurrets == other.grNoBaseDefense_SmallTurrets
                 && grBaseHealthPadActive == other.grBaseHealthPadActive
