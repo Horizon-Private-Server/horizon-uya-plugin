@@ -23,6 +23,7 @@ namespace Horizon.Plugin.UYA
         {
             new CustomMap(CustomMapId.CMAP_ID_MARAXUS_PRISON, "Maraxus Prison", "maraxus", 40),
             new CustomMap(CustomMapId.CMAP_ID_SARATHOS_SWAMP, "Sarathos Swamp", "sarathos", 41),        
+            new CustomMap(CustomMapId.CMAP_ID_TEST, "Test", "test", 47),        
         };
 
         public static CustomMap FindCustomMapById(CustomMapId id)
@@ -96,6 +97,7 @@ namespace Horizon.Plugin.UYA
     public enum CustomMapId : byte
     {
         // custom map ids
+        CMAP_ID_TEST = -1,
         CMAP_ID_MARAXUS_PRISON = 1,
         CMAP_ID_SARATHOS_SWAMP = 2,
     }
