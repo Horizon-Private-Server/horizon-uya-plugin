@@ -97,9 +97,9 @@ namespace Horizon.Plugin.UYA
     public enum CustomMapId : byte
     {
         // custom map ids
-        CMAP_ID_TEST = -1,
         CMAP_ID_MARAXUS_PRISON = 1,
         CMAP_ID_SARATHOS_SWAMP = 2,
+        CMAP_ID_TEST = 3,
     }
 
     public class CustomMap
