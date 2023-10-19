@@ -542,10 +542,11 @@ namespace Horizon.Plugin.UYA
         public bool grFluxNikingDisabled { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
+        public byte prPlayerSize { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[25];
+            byte[] output = new byte[26];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -572,6 +573,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grFluxNikingDisabled);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
+                    writer.Write(prPlayerSize);
                 }
             }
 
@@ -602,6 +604,7 @@ namespace Horizon.Plugin.UYA
             grFluxNikingDisabled = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
+            prPlayerSize = reader.ReadByte();
         }
 
         public bool SameAs(GameConfig other)
@@ -628,6 +631,7 @@ namespace Horizon.Plugin.UYA
                 && grFluxNikingDisabled == other.grFluxNikingDisabled
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
+                && prPlayerSize == other.prPlayerSize
                 ;
         }
     }
