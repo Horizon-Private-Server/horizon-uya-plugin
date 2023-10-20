@@ -31,8 +31,7 @@ namespace Horizon.Plugin.UYA
                 });
 
                 // send custom map override
-                var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
-                await Maps.SendMapOverride(gameClient.Client, map);
+                await Maps.SendMapOverride(gameClient.Client, metadata.CustomMapConfig);
             }
         }
 
@@ -41,10 +40,9 @@ namespace Horizon.Plugin.UYA
             var metadata = await GetGameMetadata(game);
 
             // send custom map override
-            var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
             foreach (var gameClient in game.Clients)
             {
-                await Maps.SendMapOverride(gameClient.Client, map);
+                await Maps.SendMapOverride(gameClient.Client, metadata.CustomMapConfig);
             }
         }
 
@@ -57,8 +55,7 @@ namespace Horizon.Plugin.UYA
             var metadata = await GetGameMetadata(game);
 
             // send custom map override
-            var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
-            await Maps.SendMapOverride(client, map);
+            await Maps.SendMapOverride(client, metadata.CustomMapConfig);
         }
 
         public static async Task PlayerJoined(ClientObject client, Server.Medius.Models.Game game)
@@ -66,8 +63,7 @@ namespace Horizon.Plugin.UYA
             var metadata = await GetGameMetadata(game);
 
             // send map override on join
-            var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
-            await Maps.SendMapOverride(client, map);
+            await Maps.SendMapOverride(client, metadata.CustomMapConfig);
 
             // send game config if not host
             if (game.Host != client)
@@ -135,19 +131,20 @@ namespace Horizon.Plugin.UYA
             return await SetGameMetadata(game, metadata);
         }
 
-        public static async Task<bool> SetGameConfig(Server.Medius.Models.Game game, GameConfig config)
+        public static async Task<bool> SetGameConfig(Server.Medius.Models.Game game, GameConfig config, GameCustomMapConfig mapConfig)
         {
             var metadata = await GetGameMetadata(game);
 
             // if no change, return false
-            if (metadata.GameConfig.SameAs(config))
+            if (metadata.GameConfig.SameAs(config) && metadata.CustomMapConfig.SameAs(mapConfig))
                 return false;
 
             // update
-            metadata.GameConfig = config;
+            metadata.GameConfig = config ?? new GameConfig();
+            metadata.CustomMapConfig = mapConfig ?? new GameCustomMapConfig();
 
             // update other metadata
-            metadata.CustomMap = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride)?.MapName;
+            metadata.CustomMap = metadata.CustomMapConfig.Name;
             metadata.CustomGameMode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride)?.Name;
             metadata.GameInfo = await GetGameInfo(game, metadata);
 
@@ -186,10 +183,9 @@ namespace Horizon.Plugin.UYA
 
             // parse gamemode
             var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
-            var map = Maps.FindCustomMapById((CustomMapId)metadata.GameConfig.MapOverride);
-            if (map != null && map.ModeId.HasValue)
+            if (metadata.CustomMapConfig.HasMap() && metadata.CustomMapConfig.ForcedModeId != 0)
             {
-                mode = Modes.FindCustomModeById(map.ModeId.Value);
+                mode = Modes.FindCustomModeById((CustomModeId)metadata.CustomMapConfig.ForcedModeId);
             }
 
 
@@ -381,6 +377,7 @@ namespace Horizon.Plugin.UYA
         public string CustomGameMode { get; set; }
         public string CustomMap { get; set; }
         public string GameInfo { get; set; }
+        public GameCustomMapConfig CustomMapConfig { get; set; } = new GameCustomMapConfig();
         public GameConfig GameConfig { get; set; } = new GameConfig();
         public GameState GameState { get; set; } = new GameState();
         public GameStats PreWideStats { get; set; } = new GameStats();
@@ -518,9 +515,56 @@ namespace Horizon.Plugin.UYA
         void Deserialize(MessageReader reader);
     }
 
+    public class GameCustomMapConfig
+    {
+        public string Filename { get; set; }
+        public string Name { get; set; }
+        public int Version { get; set; }
+        public int BaseMapId { get; set; }
+        public int ForcedModeId { get; set; }
+
+        public bool HasMap() => Filename != null && Filename.Any();
+
+        public byte[] Serialize()
+        {
+            byte[] output = new byte[64 + 32 + 4 + 4 + 4];
+            using (var ms = new MemoryStream(output, true))
+            {
+                using (var writer = new MessageWriter(ms))
+                {
+                    writer.Write(Filename, 64);
+                    writer.Write(Name, 32);
+                    writer.Write(Version);
+                    writer.Write(BaseMapId);
+                    writer.Write(ForcedModeId);
+                }
+            }
+
+            return output;
+        }
+
+        public void Deserialize(MessageReader reader)
+        {
+            Filename = reader.ReadString(64);
+            Name = reader.ReadString(32);
+            Version = reader.ReadInt32();
+            BaseMapId = reader.ReadInt32();
+            ForcedModeId = reader.ReadInt32();
+        }
+
+        public bool SameAs(GameCustomMapConfig other)
+        {
+            return Filename == other.Filename
+                && Name == other.Name
+                && Version == other.Version
+                && BaseMapId == other.BaseMapId
+                && ForcedModeId == other.ForcedModeId
+                ;
+        }
+    }
+
     public class GameConfig
     {
-        public byte MapOverride { get; set; }
         public byte GamemodeOverride { get; set; }
         public byte grRespawnTimer { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
@@ -546,12 +590,11 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[26];
+            byte[] output = new byte[25];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
                 {
-                    writer.Write(MapOverride);
                     writer.Write(GamemodeOverride);
                     writer.Write(grRespawnTimer);
                     writer.Write(grDisablePenaltyTimers);
@@ -582,7 +625,6 @@ namespace Horizon.Plugin.UYA
 
         public void Deserialize(MessageReader reader)
         {
-            MapOverride = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
             grRespawnTimer = reader.ReadByte();
             grDisablePenaltyTimers = reader.ReadBoolean();
@@ -609,8 +651,7 @@ namespace Horizon.Plugin.UYA
 
         public bool SameAs(GameConfig other)
         {
-            return MapOverride == other.MapOverride
-                && GamemodeOverride == other.GamemodeOverride
+            return GamemodeOverride == other.GamemodeOverride
                 && grRespawnTimer == other.grRespawnTimer
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks

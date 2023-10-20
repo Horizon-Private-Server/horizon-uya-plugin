@@ -19,18 +19,6 @@ namespace Horizon.Plugin.UYA
             Path.Combine(Plugin.WorkingDirectory, "bin/usbd.irx"),
         };
 
-        static readonly CustomMap[] CustomMaps = new CustomMap[]
-        {
-            new CustomMap(CustomMapId.CMAP_ID_MARAXUS_PRISON, "Maraxus Prison", "maraxus", 40),
-            new CustomMap(CustomMapId.CMAP_ID_SARATHOS_SWAMP, "Sarathos Swamp", "sarathos", 41),        
-            new CustomMap(CustomMapId.CMAP_ID_TEST, "Test", "test", 47),        
-        };
-
-        public static CustomMap FindCustomMapById(CustomMapId id)
-        {
-            return CustomMaps.FirstOrDefault(x => x.MapId == id);
-        }
-
         public static Task SendMapModules(ClientObject client, uint module1Addr, uint module2Addr)
         {
             var payloads = new Payload[]
@@ -66,13 +54,11 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        public static Task SendMapOverride(ClientObject client, CustomMap map)
+        public static Task SendMapOverride(ClientObject client, GameCustomMapConfig mapConfig)
         {
             client.Queue(new SetMapOverrideRequestMessage()
             {
-                MapId = (byte)(map?.LoadingMapId ?? 0),
-                MapFilename = map?.MapFilename ?? "",
-                MapName = map?.MapName ?? ""
+                CustomMapConfig = mapConfig
             });
 
             return Task.CompletedTask;

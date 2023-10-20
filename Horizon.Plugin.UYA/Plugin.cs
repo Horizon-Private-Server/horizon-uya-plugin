@@ -76,6 +76,12 @@ namespace Horizon.Plugin.UYA
         public void SyncRoboDbToHorizon() {
             DebugLog("Syncing robo db to horizon ...");
 
+            if (RoboDb == null)
+            {
+                DebugLog("Robo db is null");
+                return;
+            }
+
             Task<Dictionary<string, string>> taskGetServerSettings = Server.Medius.Program.Database.GetServerSettings(10684); 
             taskGetServerSettings.Wait(); 
 
@@ -189,7 +195,7 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
 
 
-            if (RoboDb.AccountExists(request.Username)) {
+            if (RoboDb != null && RoboDb.AccountExists(request.Username)) {
                 // If password = Robo hashed password, then change the password to be the robo encrypted PW?
                 string roboPassword = RoboDb.GetPassword(request.Username);
 
@@ -236,7 +242,7 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
 
 
-            if (RoboDb.AccountExists(request.Username)) {
+            if (RoboDb != null && RoboDb.AccountExists(request.Username)) {
                 string roboPassword = RoboDb.GetPassword(request.Username);
                 string horizonPassword = RoboDb.EncryptString(request.Password);
 
@@ -729,14 +735,14 @@ namespace Horizon.Plugin.UYA
                                 var request = new SetMapOverrideResponseMessage();
                                 request.Deserialize(reader);
 
-                                await Player.SetPlayerMapVersion(msg.Player, request.ClientMapVersion);
+                                await Player.SetPlayerMapVersion(msg.Player, request.MapFilename, request.ClientMapVersion);
                                 break;
                             }
                         case 7: // request for current custom map override
                             {
                                 var requestMessage = new GetMapOverrideRequestMessage();
                                 requestMessage.Deserialize(reader);
-                                //await Game.SendMapOverride(msg.Player);
+                                await Game.SendMapOverride(msg.Player);
                                 break;
                             }
                         case 8: // set player patch config
@@ -754,7 +760,7 @@ namespace Horizon.Plugin.UYA
                                     request.Deserialize(reader);
 
                                     // try to update game config
-                                    if (await Game.SetGameConfig(msg.Player.CurrentGame, request.Config))
+                                    if (await Game.SetGameConfig(msg.Player.CurrentGame, request.Config, request.CustomMapConfig))
                                     {
                                         // send new game config to other players in lobby
                                         await Game.BroadcastGameConfig(msg.Player.CurrentGame);

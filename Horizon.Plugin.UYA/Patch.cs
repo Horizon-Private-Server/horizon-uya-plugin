@@ -104,7 +104,7 @@ namespace Horizon.Plugin.UYA
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
             {
-                Address = 0x000DFFE0,
+                Address = 0x000E0000 - 0x20,
                 Length = 0x20,
                 QueryType = RT.Common.CheatQueryType.DME_SERVER_CHEAT_QUERY_RAW_MEMORY,
                 SequenceId = 101
@@ -207,11 +207,9 @@ namespace Horizon.Plugin.UYA
                 payloads = payloads.Union(new Payload[]
                 {
                     // patch config
-                    new Payload(0x000E0008, (await Player.GetPatchConfig(client)).Serialize()),
+                    new Payload(0x000E0000 + 0x08, (await Player.GetPatchConfig(client)).Serialize()),
                     // hash
-                    new Payload(0x000DFFE0, hash),
-                    // hook
-                    new Payload(0x000E0008, (await Player.GetPatchConfig(client)).Serialize()),
+                    new Payload(0x000E0000 - 0x20, hash),
                 });
 
                 // update saved player hash
