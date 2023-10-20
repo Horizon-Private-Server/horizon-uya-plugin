@@ -13,6 +13,7 @@ namespace Horizon.Plugin.UYA.Messages
         public override bool SkipEncryption { get => true; set { } }
 
         public GameConfig Config { get; set; }
+        public GameCustomMapConfig CustomMapConfig { get; set; }
 
         public override void Deserialize(MessageReader reader)
         {
@@ -20,6 +21,9 @@ namespace Horizon.Plugin.UYA.Messages
 
             Config = new GameConfig();
             Config.Deserialize(reader);
+            reader.ReadBytes(2);
+            CustomMapConfig = new GameCustomMapConfig();
+            CustomMapConfig.Deserialize(reader);
         }
 
         public override void Serialize(MessageWriter writer)
@@ -27,6 +31,8 @@ namespace Horizon.Plugin.UYA.Messages
             base.Serialize(writer);
 
             writer.Write(Config.Serialize());
+            writer.Write(new byte[2]);
+            writer.Write(CustomMapConfig.Serialize());
         }
     }
 }

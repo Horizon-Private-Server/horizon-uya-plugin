@@ -13,26 +13,26 @@ namespace Horizon.Plugin.UYA
     {
         private static Dictionary<int, PlayerExtraInfo> _playerExtraInfos = new Dictionary<int, PlayerExtraInfo>();
 
-        public static async Task SetPlayerMapVersion(ClientObject client, int mapVersion)
+        public static async Task SetPlayerMapVersion(ClientObject client, string mapFilename, int mapVersion)
         {
             var game = client.CurrentGame;
             if (game == null)
                 return;
 
             var gameMetadata = await Game.GetGameMetadata(game);
+            if (gameMetadata.CustomMapConfig.Filename != mapFilename) return;
+
             var extraInfo = GetPlayerExtraInfo(client.AccountId);
             extraInfo.CurrentMapVersion = mapVersion;
 
-
-            var map = Maps.FindCustomMapById((CustomMapId)gameMetadata.GameConfig.MapOverride);
-            if (map != null)
+            if (gameMetadata.CustomMapConfig.HasMap())
             {
                 if (mapVersion == -1)
                 {
                     // maps no enabled
                     //client.CurrentChannel.BroadcastSystemMessage(client.CurrentChannel.Clients, $"A{client.AccountName} does not have custom maps enabled");
                 }
-                else if (mapVersion == -2 && map != null)
+                else if (mapVersion == -2)
                 {
                     // player doesn't have map
                     //client.CurrentChannel.BroadcastSystemMessage(client.CurrentChannel.Clients, $"A{client.AccountName} does not have {map.MapName}");
