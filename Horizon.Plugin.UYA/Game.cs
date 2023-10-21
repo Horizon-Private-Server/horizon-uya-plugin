@@ -144,7 +144,7 @@ namespace Horizon.Plugin.UYA
             metadata.CustomMapConfig = mapConfig ?? new GameCustomMapConfig();
 
             // update other metadata
-            metadata.CustomMap = metadata.CustomMapConfig.Name;
+            metadata.CustomMap = String.IsNullOrEmpty(metadata.CustomMapConfig.Name) ? null : metadata.CustomMapConfig.Name;
             metadata.CustomGameMode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride)?.Name;
             metadata.GameInfo = await GetGameInfo(game, metadata);
 
