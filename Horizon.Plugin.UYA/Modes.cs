@@ -24,8 +24,7 @@ namespace Horizon.Plugin.UYA
     public enum CustomModeId : sbyte
     {
         // custom mode ids
-
-        CMODE_ID_EXAMPLE = 1,
+        // CMODE_ID_EXAMPLE = 1,
 
         /*
         CMODE_ID_GUN_GAME = 1,
@@ -43,6 +42,7 @@ namespace Horizon.Plugin.UYA
         CMODE_ID_SPLEEF = -2,
         CMODE_ID_HOVERBIKE_RACE = -3,
         */
+        CMODE_ID_SPLEEF = -1,
     }
 
 }
