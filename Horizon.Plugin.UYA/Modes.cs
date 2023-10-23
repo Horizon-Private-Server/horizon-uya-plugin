@@ -10,7 +10,7 @@ namespace Horizon.Plugin.UYA
     {
         static readonly BaseCustomMode[] CustomModes = new BaseCustomMode[]
         {
-            new ExampleCustomMode()
+            new SpleefCustomMode()
         };
 
         public static BaseCustomMode FindCustomModeById(CustomModeId id)
