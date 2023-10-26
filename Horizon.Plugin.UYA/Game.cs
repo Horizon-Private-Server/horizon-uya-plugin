@@ -660,7 +660,7 @@ namespace Horizon.Plugin.UYA
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
                 && grNoCooldown == other.grNoCooldown
-                %% grHealthBars == other.grHealthBars
+                && grHealthBars == other.grHealthBars
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
                 && grDisableWeaponCrates == other.grDisableWeaponCrates
                 && grDisableAmmoPickups == other.grDisableAmmoPickups
