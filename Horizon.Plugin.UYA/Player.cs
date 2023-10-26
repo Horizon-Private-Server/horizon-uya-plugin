@@ -135,10 +135,11 @@ namespace Horizon.Plugin.UYA
         public bool enableFpsCounter { get; set; }
         public byte playerFov { get; set; }
         public bool enableSpectate { get; set; }
+        public bool alwaysShowHealth { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[6];
+            byte[] output = new byte[7];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -149,6 +150,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableFpsCounter);
                     writer.Write(playerFov);
                     writer.Write(enableSpectate);
+                    writer.WRite(alwaysShowHealth);
                 }
             }
 
@@ -163,6 +165,7 @@ namespace Horizon.Plugin.UYA
             enableFpsCounter = reader.ReadBoolean();
             playerFov = reader.ReadByte();
             enableSpectate = reader.ReadBoolean();
+            alwaysShowHealth = reader.ReadBoolean();
         }
     }
 }
