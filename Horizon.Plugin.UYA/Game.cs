@@ -602,7 +602,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
                     writer.Write(grNoCooldown);
-                    writer.write(grHealthBars);
+                    writer.Write(grHealthBars);
                     writer.Write(grDisableHealthBoxes);
                     writer.Write(grDisableWeaponCrates);
                     writer.Write(grDisableAmmoPickups);
