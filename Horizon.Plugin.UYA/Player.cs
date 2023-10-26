@@ -150,7 +150,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableFpsCounter);
                     writer.Write(playerFov);
                     writer.Write(enableSpectate);
-                    writer.WRite(alwaysShowHealth);
+                    writer.Write(alwaysShowHealth);
                 }
             }
 
