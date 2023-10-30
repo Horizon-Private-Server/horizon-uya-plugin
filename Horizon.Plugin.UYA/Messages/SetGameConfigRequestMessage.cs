@@ -21,7 +21,7 @@ namespace Horizon.Plugin.UYA.Messages
 
             Config = new GameConfig();
             Config.Deserialize(reader);
-            reader.ReadBytes(2);
+            reader.Align(4);
             CustomMapConfig = new GameCustomMapConfig();
             CustomMapConfig.Deserialize(reader);
         }
@@ -31,7 +31,7 @@ namespace Horizon.Plugin.UYA.Messages
             base.Serialize(writer);
 
             writer.Write(Config.Serialize());
-            writer.Write(new byte[2]);
+            writer.Align(4);
             writer.Write(CustomMapConfig.Serialize());
         }
     }

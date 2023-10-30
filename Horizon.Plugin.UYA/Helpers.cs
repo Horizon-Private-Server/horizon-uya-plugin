@@ -20,6 +20,24 @@ namespace Horizon.Plugin.UYA
             return results;
         }
 
+        public static void Align(this MessageReader reader, int alignment)
+        {
+            long mod = reader.BaseStream.Position % alignment;
+            if (mod == 0) return;
+
+            // move forward to reach alignment
+            reader.ReadBytes(alignment - (int)mod);
+        }
+
+        public static void Align(this MessageWriter writer, int alignment)
+        {
+            long mod = writer.BaseStream.Position % alignment;
+            if (mod == 0) return;
+
+            // move forward to reach alignment
+            writer.Write(new byte[alignment - (int)mod]);
+        }
+
         #endregion
 
     }

@@ -532,11 +532,11 @@ namespace Horizon.Plugin.UYA
             {
                 using (var writer = new MessageWriter(ms))
                 {
-                    writer.Write(Filename, 64);
-                    writer.Write(Name, 32);
                     writer.Write(Version);
                     writer.Write(BaseMapId);
                     writer.Write(ForcedModeId);
+                    writer.Write(Name, 32);
+                    writer.Write(Filename, 64);
                 }
             }
 
@@ -545,11 +545,11 @@ namespace Horizon.Plugin.UYA
 
         public void Deserialize(MessageReader reader)
         {
-            Filename = reader.ReadString(64);
-            Name = reader.ReadString(32);
             Version = reader.ReadInt32();
             BaseMapId = reader.ReadInt32();
             ForcedModeId = reader.ReadInt32();
+            Name = reader.ReadString(32);
+            Filename = reader.ReadString(64);
         }
 
         public bool SameAs(GameCustomMapConfig other)
@@ -590,7 +590,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[25];
+            byte[] output = new byte[23];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
