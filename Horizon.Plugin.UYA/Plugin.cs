@@ -68,6 +68,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
+            host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
             return Task.CompletedTask;
@@ -689,6 +690,18 @@ namespace Horizon.Plugin.UYA
             }
         }
 
+        Task OnRecvDnasSignature(NetMessageTypes msgClass, byte msgType, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnMediusMessageArgs)data;
+            if (msg.Ignore || !msg.IsIncoming || msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            msg.Ignore = true;
+            return Task.CompletedTask;
+        }
+
         async Task OnRecvCustomMessage(NetMessageTypes msgClass, byte msgType, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnMediusMessageArgs)data;
@@ -785,6 +798,14 @@ namespace Horizon.Plugin.UYA
                         case 13: // redownload patch
                             {
                                 await Patch.SendPatch(msg.Player);
+                                break;
+                            }
+                        case 14: // set client machine id
+                            {
+                                var request = new SetClientMachineIdRequest();
+                                request.Deserialize(reader);
+
+                                await Program.Database.PostMachineId(msg.Player.AccountId, BitConverter.ToString(request.MachineId));
                                 break;
                             }
                         default:
