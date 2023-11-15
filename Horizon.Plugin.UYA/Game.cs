@@ -566,6 +566,7 @@ namespace Horizon.Plugin.UYA
     public class GameConfig
     {
         public byte GamemodeOverride { get; set; }
+        public byte grRadarBlipsDistance { get; set; }
         public byte grRespawnTimer { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
         public byte grDisableWeaponPacks { get; set; }
@@ -591,12 +592,13 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[23];
+            byte[] output = new byte[24];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
                 {
                     writer.Write(GamemodeOverride);
+                    writer.Write(grRadarBlipsDistance);
                     writer.Write(grRespawnTimer);
                     writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
@@ -628,6 +630,7 @@ namespace Horizon.Plugin.UYA
         public void Deserialize(MessageReader reader)
         {
             GamemodeOverride = reader.ReadByte();
+            grRadarBlipsDistance = reader.ReadByte();
             grRespawnTimer = reader.ReadByte();
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadByte();
@@ -655,6 +658,7 @@ namespace Horizon.Plugin.UYA
         public bool SameAs(GameConfig other)
         {
             return GamemodeOverride == other.GamemodeOverride
+                && grRadarBlipsDistance == other.grRadarBlipsDistance
                 && grRespawnTimer == other.grRespawnTimer
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
