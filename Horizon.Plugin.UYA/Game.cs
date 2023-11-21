@@ -586,13 +586,14 @@ namespace Horizon.Plugin.UYA
         public byte grVampire { get; set; }
         public bool grFluxShotsAlwaysHit { get; set; }
         public bool grFluxNikingDisabled { get; set; }
+        public bool grFlagHotspots { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
         public byte prPlayerSize { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[24];
+            byte[] output = new byte[25];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -618,6 +619,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grVampire);
                     writer.Write(grFluxShotsAlwaysHit);
                     writer.Write(grFluxNikingDisabled);
+                    writer.Write(grFlagHotspots);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
                     writer.Write(prPlayerSize);
@@ -650,6 +652,7 @@ namespace Horizon.Plugin.UYA
             grVampire = reader.ReadByte();
             grFluxShotsAlwaysHit = reader.ReadBoolean();
             grFluxNikingDisabled = reader.ReadBoolean();
+            grFlagHotspots = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
             prPlayerSize = reader.ReadByte();
@@ -678,6 +681,7 @@ namespace Horizon.Plugin.UYA
                 && grVampire == other.grVampire
                 && grFluxShotsAlwaysHit == other.grFluxShotsAlwaysHit
                 && grFluxNikingDisabled == other.grFluxNikingDisabled
+                && grFlagHotspots == other.grFlagHotspots
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
                 && prPlayerSize == other.prPlayerSize
