@@ -193,7 +193,7 @@ namespace Horizon.Plugin.UYA
             {
                 foreach (var supportedAppId in SupportedAppIds)
                 {
-                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId);
+                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId) ?? new Dictionary<string, string>();
                     if (!appSettingsByAppId.TryGetValue(supportedAppId, out var settings))
                         appSettingsByAppId.Add(supportedAppId, settings = new AppSettings(supportedAppId));
 
@@ -213,11 +213,9 @@ namespace Horizon.Plugin.UYA
 
                 foreach (var supportedAppId in SupportedAppIds)
                 {
-                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId);
+                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId) ?? new Dictionary<string, string>();
                     if (!appSettingsByAppId.TryGetValue(supportedAppId, out var settings))
                         appSettingsByAppId.Add(supportedAppId, settings = new AppSettings(supportedAppId));
-
-                    if (appSettings == null) appSettings = new Dictionary<string, string>();
 
                     settings.SetSettings(appSettings);
                 }
