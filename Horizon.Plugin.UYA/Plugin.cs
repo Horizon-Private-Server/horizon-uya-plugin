@@ -59,8 +59,8 @@ namespace Horizon.Plugin.UYA
             // if (Api == null)
             //     Api = new RoboApi((Plugin)this);
 
-            //if (RoboDb == null)
-            //    RoboDb = new RoboDatabase((Plugin)this);
+            if (RoboDb == null)
+                RoboDb = new RoboDatabase((Plugin)this);
 
 
             SyncRoboDbToHorizon();
