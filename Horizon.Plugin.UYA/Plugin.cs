@@ -37,7 +37,19 @@ namespace Horizon.Plugin.UYA
         //public static RoboApi Api = null;
         public static RoboDatabase RoboDb = null;
 
-        
+        // db appsettings
+        private static bool hasQueriedAppSettings = false;
+        private static DateTime timeLastQueriedAppSettings = DateTime.MinValue;
+        private static readonly AppSettings defaultAppSettings = new AppSettings(0);
+        private static Dictionary<int, AppSettings> appSettingsByAppId = new Dictionary<int, AppSettings>();
+
+        public static AppSettings GetAppSettingsOrDefault(int appId)
+        {
+            if (appSettingsByAppId.TryGetValue(appId, out var settings))
+                return settings;
+
+            return defaultAppSettings;
+        }
 
         public Task Start(string workingDirectory, IPluginHost host)
         {
@@ -47,8 +59,8 @@ namespace Horizon.Plugin.UYA
             // if (Api == null)
             //     Api = new RoboApi((Plugin)this);
 
-            if (RoboDb == null)
-                RoboDb = new RoboDatabase((Plugin)this);
+            //if (RoboDb == null)
+            //    RoboDb = new RoboDatabase((Plugin)this);
 
 
             SyncRoboDbToHorizon();
@@ -174,9 +186,40 @@ namespace Horizon.Plugin.UYA
 
 
 
-        Task OnTick(PluginEvent eventId, object data)
+        async Task OnTick(PluginEvent eventId, object data)
         {
-            return Task.CompletedTask;
+            // try and get app settings
+            if (!hasQueriedAppSettings && await Server.Medius.Program.Database.AmIAuthenticated() && !String.IsNullOrEmpty(Server.Medius.Program.Database.GetUsername()))
+            {
+                foreach (var supportedAppId in SupportedAppIds)
+                {
+                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId);
+                    if (!appSettingsByAppId.TryGetValue(supportedAppId, out var settings))
+                        appSettingsByAppId.Add(supportedAppId, settings = new AppSettings(supportedAppId));
+
+                    settings.SetSettings(appSettings);
+
+                    // send fully parsed settings to server
+                    await Server.Medius.Program.Database.SetServerSettings(supportedAppId, settings.GetSettings());
+                }
+
+                Host.Log(InternalLogLevel.WARN, $"ADDED APPSETTINGS FOR {Server.Medius.Program.Database.GetUsername()}");
+                hasQueriedAppSettings = true;
+                timeLastQueriedAppSettings = DateTime.UtcNow;
+            }
+            else if (hasQueriedAppSettings && (DateTime.UtcNow - timeLastQueriedAppSettings).TotalMinutes > 5)
+            {
+                timeLastQueriedAppSettings = DateTime.UtcNow;
+
+                foreach (var supportedAppId in SupportedAppIds)
+                {
+                    var appSettings = await Server.Medius.Program.Database.GetServerSettings(supportedAppId);
+                    if (!appSettingsByAppId.TryGetValue(supportedAppId, out var settings))
+                        appSettingsByAppId.Add(supportedAppId, settings = new AppSettings(supportedAppId));
+
+                    settings.SetSettings(appSettings);
+                }
+            }
         }
 
         
@@ -806,6 +849,19 @@ namespace Horizon.Plugin.UYA
                                 request.Deserialize(reader);
 
                                 await Program.Database.PostMachineId(msg.Player.AccountId, BitConverter.ToString(request.MachineId));
+                                break;
+                            }
+                        case 15: // request scavenger hunt settings
+                            {
+                                var request = new GetScavengerHuntSettingsRequestMessage();
+                                request.Deserialize(reader);
+
+                                var appSettings = GetAppSettingsOrDefault(msg.Player.ApplicationId);
+                                var response = new GetScavengerHuntSettingsResponseMessage();
+                                response.Enabled = DateTimeOffset.UtcNow >= appSettings.ScavengerHuntBeginDate && DateTimeOffset.UtcNow <= appSettings.ScavengerHuntEndDate;
+                                response.SpawnFactor = appSettings.ScavengerHuntSpawnRateFactor;
+
+                                msg.Player.Queue(response);
                                 break;
                             }
                         default:
