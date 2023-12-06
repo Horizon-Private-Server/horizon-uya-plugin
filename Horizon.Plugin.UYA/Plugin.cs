@@ -217,6 +217,8 @@ namespace Horizon.Plugin.UYA
                     if (!appSettingsByAppId.TryGetValue(supportedAppId, out var settings))
                         appSettingsByAppId.Add(supportedAppId, settings = new AppSettings(supportedAppId));
 
+                    if (appSettings == null) appSettings = new Dictionary<string, string>();
+
                     settings.SetSettings(appSettings);
                 }
             }
