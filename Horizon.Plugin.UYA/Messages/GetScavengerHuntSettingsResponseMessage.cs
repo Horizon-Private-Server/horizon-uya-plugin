@@ -10,7 +10,7 @@ namespace Horizon.Plugin.UYA.Messages
 {
     public class GetScavengerHuntSettingsResponseMessage : BasePluginMessage
     {
-        public override byte CustomMsgId => 16;
+        public override byte CustomMsgId => 18;
         public override bool SkipEncryption { get => true; set { } }
 
         public bool Enabled { get; set; }
