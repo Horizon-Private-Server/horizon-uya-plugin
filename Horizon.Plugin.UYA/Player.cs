@@ -138,11 +138,10 @@ namespace Horizon.Plugin.UYA
         public bool alwaysShowHealth { get; set; }
         public byte mapScoreToggle_MapBtn { get; set; }
         public byte mapScoreToggle_ScoreBtn { get; set; }
-        public bool disableScavengerHunt { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[10];
+            byte[] output = new byte[9];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -156,7 +155,6 @@ namespace Horizon.Plugin.UYA
                     writer.Write(alwaysShowHealth);
                     writer.Write(mapScoreToggle_MapBtn);
                     writer.Write(mapScoreToggle_ScoreBtn);
-                    writer.Write(disableScavengerHunt);
                 }
             }
 
@@ -174,7 +172,6 @@ namespace Horizon.Plugin.UYA
             alwaysShowHealth = reader.ReadBoolean();
             mapScoreToggle_MapBtn = reader.ReadByte();
             mapScoreToggle_ScoreBtn = reader.ReadByte();
-            disableScavengerHunt = reader.ReadBool();
         }
     }
 }
