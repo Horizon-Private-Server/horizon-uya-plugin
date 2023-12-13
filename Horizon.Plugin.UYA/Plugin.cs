@@ -851,7 +851,7 @@ namespace Horizon.Plugin.UYA
                                 await Program.Database.PostMachineId(msg.Player.AccountId, BitConverter.ToString(request.MachineId));
                                 break;
                             }
-                        case 15: // request scavenger hunt settings
+                        case 17: // request scavenger hunt settings
                             {
                                 var request = new GetScavengerHuntSettingsRequestMessage();
                                 request.Deserialize(reader);
