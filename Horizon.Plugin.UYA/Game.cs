@@ -567,7 +567,7 @@ namespace Horizon.Plugin.UYA
     {
         public byte GamemodeOverride { get; set; }
         public byte grRadarBlipsDistance { get; set; }
-        public byte grRespawnTimer { get; set; }
+        public byte grRespawnTimer_Player { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
         public byte grDisableWeaponPacks { get; set; }
         public byte grV2s { get; set; }
@@ -576,6 +576,9 @@ namespace Horizon.Plugin.UYA
         public bool grDisableHealthBoxes { get; set; }
         public bool grDisableWeaponCrates { get; set; }
         public bool grDisableAmmoPickups { get; set; }
+        public byte grRespawnTimer_HealthBoxes { get; set; }
+        public byte grRespawnTimer_WeaponCrates { get; set; }
+        public byte grRespawnTimer_AmmoPickups { get; set; }
         public bool grAutoRespawn { get; set; }
         public byte grSetGattlingTurretHealth { get; set; }
         public bool grDisableDrones { get; set; }
@@ -593,14 +596,14 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[25];
+            byte[] output = new byte[28];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
                 {
                     writer.Write(GamemodeOverride);
                     writer.Write(grRadarBlipsDistance);
-                    writer.Write(grRespawnTimer);
+                    writer.Write(grRespawnTimer_Player);
                     writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
@@ -609,6 +612,9 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisableHealthBoxes);
                     writer.Write(grDisableWeaponCrates);
                     writer.Write(grDisableAmmoPickups);
+                    writer.Write(grRespawnTimer_HealthBoxes);
+                    writer.Write(grRespawnTimer_WeaponCrates);
+                    writer.Write(grRespawnTimer_AmmoPickups);
                     writer.Write(grAutoRespawn);
                     writer.Write(grSetGattlingTurretHealth);
                     writer.Write(grDisableDrones);
@@ -633,7 +639,7 @@ namespace Horizon.Plugin.UYA
         {
             GamemodeOverride = reader.ReadByte();
             grRadarBlipsDistance = reader.ReadByte();
-            grRespawnTimer = reader.ReadByte();
+            grRespawnTimer_Player = reader.ReadByte();
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadByte();
             grV2s = reader.ReadByte();
@@ -642,6 +648,9 @@ namespace Horizon.Plugin.UYA
             grDisableHealthBoxes = reader.ReadBoolean();
             grDisableWeaponCrates = reader.ReadBoolean();
             grDisableAmmoPickups = reader.ReadBoolean();
+            grRespawnTimer_HealthBoxes = reader.ReadByte();
+            grRespawnTimer_WeaponCrates = reader.ReadByte();
+            grRespawnTimer_AmmoPickups = reader.ReadByte();
             grAutoRespawn = reader.ReadBoolean();
             grSetGattlingTurretHealth = reader.ReadByte();
             grDisableDrones = reader.ReadBoolean();
@@ -671,6 +680,9 @@ namespace Horizon.Plugin.UYA
                 && grDisableHealthBoxes == other.grDisableHealthBoxes
                 && grDisableWeaponCrates == other.grDisableWeaponCrates
                 && grDisableAmmoPickups == other.grDisableAmmoPickups
+                && grRespawnTimer_HealthBoxes == other.grRespawnTimer_HealthBoxes
+                && grRespawnTimer_WeaponCrates == other.grRespawnTimer_WeaponCrates
+                && grRespawnTimer_AmmoPickups == other.grRespawnTimer_AmmoPickups
                 && grAutoRespawn == other.grAutoRespawn
                 && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
                 && grDisableDrones == other.grDisableDrones
