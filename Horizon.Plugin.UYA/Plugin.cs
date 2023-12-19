@@ -851,6 +851,19 @@ namespace Horizon.Plugin.UYA
                                 await Program.Database.PostMachineId(msg.Player.AccountId, BitConverter.ToString(request.MachineId));
                                 break;
                             }
+                        case 16: // player picked up horizon bolt
+                            {
+                                var request = new PlayerPickedUpHorizonBoltMessage();
+                                request.Deserialize(reader);
+
+                                // make sure the scavenger hunt is live
+                                var appSettings = GetAppSettingsOrDefault(msg.Player.ApplicationId);
+                                if (DateTime.UtcNow >= appSettings.ScavengerHuntBeginDate && DateTime.UtcNow < appSettings.ScavengerHuntEndDate)
+                                {
+                                    await Player.OnPickedUpHorizonBolt(msg.Player);
+                                }
+                                break;
+                            }
                         case 17: // request scavenger hunt settings
                             {
                                 var request = new GetScavengerHuntSettingsRequestMessage();

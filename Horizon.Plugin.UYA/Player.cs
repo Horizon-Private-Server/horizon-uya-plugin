@@ -1,5 +1,6 @@
 ﻿using Horizon.Plugin.UYA.Messages;
 using Newtonsoft.Json;
+using Server.Medius;
 using Server.Medius.Models;
 using System;
 using System.Collections.Generic;
@@ -87,6 +88,22 @@ namespace Horizon.Plugin.UYA
             var result = await Server.Medius.Program.Database.PostAccountMetadata(client.AccountId, client.Metadata);
             if (!result)
                 Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
+        }
+
+        public static async Task OnPickedUpHorizonBolt(ClientObject client)
+        {
+            var total = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_HBOLT_TOTAL_COUNT] += 1;
+            var current = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_HBOLT_CURRENT_COUNT] += 1;
+
+            // send to db
+            await Server.Medius.Program.Database.PostAccountLadderCustomStats(new Server.Database.Models.StatPostDTO()
+            {
+                AccountId = client.AccountId,
+                Stats = client.CustomWideStats
+            });
+
+            // log
+            await Program.Database.Log(client.AccountId, "OnPickedUpHorizonBolt", "Horizon Bolt Picked Up", $"Total {total}, current {current}", null, null);
         }
 
         private static PlayerMetadata GetPlayerMetadata(ClientObject client)
