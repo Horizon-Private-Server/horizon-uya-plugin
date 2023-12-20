@@ -877,6 +877,19 @@ namespace Horizon.Plugin.UYA
                                 msg.Player.Queue(response);
                                 break;
                             }
+                        case 19: // request month day
+                            {
+                                var request = new GetMonthDayRequestMessage();
+                                request.Deserialize(reader);
+
+                                var now = DateTime.UtcNow;
+                                var response = new GetMonthDayResponseMessage();
+                                response.Month = (byte)now.Month;
+                                response.Day = (byte)now.Day;
+
+                                msg.Player.Queue(response);
+                                break;
+                            }
                         default:
                             {
                                 Host.Log(InternalLogLevel.WARN, $"Unhandled custom msg id {customMsgId}: {msg}");

@@ -671,7 +671,7 @@ namespace Horizon.Plugin.UYA
         {
             return GamemodeOverride == other.GamemodeOverride
                 && grRadarBlipsDistance == other.grRadarBlipsDistance
-                && grRespawnTimer == other.grRespawnTimer
+                && grRespawnTimer_Player == other.grRespawnTimer_Player
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
