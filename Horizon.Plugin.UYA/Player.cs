@@ -156,10 +156,11 @@ namespace Horizon.Plugin.UYA
         public byte mapScoreToggle_MapBtn { get; set; }
         public byte mapScoreToggle_ScoreBtn { get; set; }
         public bool enableSingleplayerMusic { get; set; }
+        public byte quickSelectTimeDelay { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[10];
+            byte[] output = new byte[11];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -174,6 +175,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(mapScoreToggle_MapBtn);
                     writer.Write(mapScoreToggle_ScoreBtn);
                     writer.Write(enableSingleplayerMusic);
+                    writer.Write(quickSelectTimeDelay);
                 }
             }
 
@@ -192,6 +194,7 @@ namespace Horizon.Plugin.UYA
             mapScoreToggle_MapBtn = reader.ReadByte();
             mapScoreToggle_ScoreBtn = reader.ReadByte();
             enableSingleplayerMusic = reader.ReadBoolean();
+            quickSelectTimeDelay = reader.ReadByte();
         }
     }
 }
