@@ -568,6 +568,7 @@ namespace Horizon.Plugin.UYA
         public byte GamemodeOverride { get; set; }
         public byte grRadarBlipsDistance { get; set; }
         public byte grRespawnTimer_Player { get; set; }
+        public bool grRespawnInvicibility { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
         public byte grDisableWeaponPacks { get; set; }
         public byte grV2s { get; set; }
@@ -596,7 +597,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[28];
+            byte[] output = new byte[29];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -604,6 +605,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(GamemodeOverride);
                     writer.Write(grRadarBlipsDistance);
                     writer.Write(grRespawnTimer_Player);
+                    writer.Write(grRespawnInvicibility);
                     writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
@@ -640,6 +642,7 @@ namespace Horizon.Plugin.UYA
             GamemodeOverride = reader.ReadByte();
             grRadarBlipsDistance = reader.ReadByte();
             grRespawnTimer_Player = reader.ReadByte();
+            grRespawnInvicibility = reader.ReadBoolean();
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadByte();
             grV2s = reader.ReadByte();
@@ -672,6 +675,7 @@ namespace Horizon.Plugin.UYA
             return GamemodeOverride == other.GamemodeOverride
                 && grRadarBlipsDistance == other.grRadarBlipsDistance
                 && grRespawnTimer_Player == other.grRespawnTimer_Player
+                && grRespawnInvicibility == other.grRespawnInvicibility
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
