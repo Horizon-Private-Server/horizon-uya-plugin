@@ -11,7 +11,7 @@ namespace Horizon.Plugin.UYA.CustomModes
 {
     public class JuggernaughtCustomMode : BaseCustomMode
     {
-        public override CustomModeId Id => CustomModeId.CMODE_ID_Juggernaught;
+        public override CustomModeId Id => CustomModeId.CMODE_ID_JUGGERNAUGHT;
         public override string Name => "Juggernaught";
 
         public override Task OnClientPostWideStats(OnPlayerWideStatsArgs args)
