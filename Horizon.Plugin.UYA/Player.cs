@@ -158,11 +158,13 @@ namespace Horizon.Plugin.UYA
         public bool enableSingleplayerMusic { get; set; }
         public byte quickSelectTimeDelay { get; set; }
         public bool aimAssist { get; set; }
-        public byte cycleOrder { get; set; }
+        public byte cycleWeapon1 { get; set; }
+        public byte cycleWeapon2 { get; set; }
+        public byte cycleWeapon3 { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[13];
+            byte[] output = new byte[15];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -179,7 +181,9 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableSingleplayerMusic);
                     writer.Write(quickSelectTimeDelay);
                     writer.Write(aimAssist);
-                    writer.Write(cycleOrder);
+                    writer.Write(cycleWeapon1);
+                    writer.Write(cycleWeapon2);
+                    writer.Write(cycleWeapon3);
                 }
             }
 
@@ -200,7 +204,9 @@ namespace Horizon.Plugin.UYA
             enableSingleplayerMusic = reader.ReadBoolean();
             quickSelectTimeDelay = reader.ReadByte();
             aimAssist = reader.ReadBoolean();
-            cycleOrder = reader.ReadByte();
+            cycleWeapon1 = reader.ReadByte();
+            cycleWeapon2 = reader.ReadByte();
+            cycleWeapon3 = reader.ReadByte();
         }
     }
 }
