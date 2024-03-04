@@ -856,7 +856,7 @@ namespace Horizon.Plugin.UYA
                                 {
                                     if (t.Result != null && t.Result == true)
                                     {
-                                        Player.ForceDisconnect();
+                                        msg.Player.ForceDisconnect();
                                     }
                                 });
 
