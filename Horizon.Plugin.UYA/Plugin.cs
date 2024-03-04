@@ -848,7 +848,18 @@ namespace Horizon.Plugin.UYA
                                 var request = new SetClientMachineIdRequest();
                                 request.Deserialize(reader);
 
-                                await Program.Database.PostMachineId(msg.Player.AccountId, BitConverter.ToString(request.MachineId));
+                                string macAddr = BitConverter.ToString(request.MachineId);
+
+                                await Program.Database.PostMachineId(msg.Player.AccountId, macAddr);
+
+                                _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
+                                {
+                                    if (t.Result != null && t.Result == true)
+                                    {
+                                        Player.ForceDisconnect()
+                                    }
+                                });
+
                                 break;
                             }
                         case 16: // player picked up horizon bolt
