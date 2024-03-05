@@ -854,7 +854,7 @@ namespace Horizon.Plugin.UYA
 
                                 _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
                                 {
-                                    if (t.Result != null && t.Result == true)
+                                    if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
                                     {
                                         msg.Player.ForceDisconnect();
                                     }
