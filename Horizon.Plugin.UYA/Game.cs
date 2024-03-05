@@ -594,7 +594,7 @@ namespace Horizon.Plugin.UYA
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
         public byte prPlayerSize { get; set; }
-        public byte prLoadoutWeaponsOnly { get; set; }
+        public bool prLoadoutWeaponsOnly { get; set; }
 
         public byte[] Serialize()
         {
