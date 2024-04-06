@@ -75,7 +75,7 @@ namespace Horizon.Plugin.UYA
                 UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10683.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000D0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
+                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
                     (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
@@ -88,7 +88,7 @@ namespace Horizon.Plugin.UYA
                 UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000D0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
+                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
                     (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
@@ -104,7 +104,7 @@ namespace Horizon.Plugin.UYA
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
             {
-                Address = 0x000D0000 - 0x20,
+                Address = 0x000e0000 - 0x20,
                 Length = 0x20,
                 QueryType = RT.Common.CheatQueryType.DME_SERVER_CHEAT_QUERY_RAW_MEMORY,
                 SequenceId = 101
@@ -207,9 +207,9 @@ namespace Horizon.Plugin.UYA
                 payloads = payloads.Union(new Payload[]
                 {
                     // patch config
-                    new Payload(0x000D0000 + 0x08, (await Player.GetPatchConfig(client)).Serialize()),
+                    new Payload(0x000e0000 + 0x08, (await Player.GetPatchConfig(client)).Serialize()),
                     // hash
-                    new Payload(0x000D0000 - 0x20, hash),
+                    new Payload(0x000e0000 - 0x20, hash),
                 });
 
                 // update saved player hash
