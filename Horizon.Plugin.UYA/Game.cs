@@ -574,7 +574,7 @@ namespace Horizon.Plugin.UYA
         public byte grV2s { get; set; }
         public bool grNoCooldown { get; set; }
         public bool grHealthBars { get; set; }
-        public bool grDisableHealthBoxes { get; set; }
+        public byte grHealthBoxes { get; set; }
         public bool grDisableWeaponCrates { get; set; }
         public bool grDisableAmmoPickups { get; set; }
         public byte grRespawnTimer_HealthBoxes { get; set; }
@@ -612,7 +612,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grV2s);
                     writer.Write(grNoCooldown);
                     writer.Write(grHealthBars);
-                    writer.Write(grDisableHealthBoxes);
+                    writer.Write(grHealthBoxes);
                     writer.Write(grDisableWeaponCrates);
                     writer.Write(grDisableAmmoPickups);
                     writer.Write(grRespawnTimer_HealthBoxes);
@@ -650,7 +650,7 @@ namespace Horizon.Plugin.UYA
             grV2s = reader.ReadByte();
             grNoCooldown = reader.ReadBoolean();
             grHealthBars = reader.ReadBoolean();
-            grDisableHealthBoxes = reader.ReadBoolean();
+            grHealthBoxes = reader.ReadByte();
             grDisableWeaponCrates = reader.ReadBoolean();
             grDisableAmmoPickups = reader.ReadBoolean();
             grRespawnTimer_HealthBoxes = reader.ReadByte();
@@ -684,7 +684,7 @@ namespace Horizon.Plugin.UYA
                 && grV2s == other.grV2s
                 && grNoCooldown == other.grNoCooldown
                 && grHealthBars == other.grHealthBars
-                && grDisableHealthBoxes == other.grDisableHealthBoxes
+                && grHealthBoxes == other.grHealthBoxes
                 && grDisableWeaponCrates == other.grDisableWeaponCrates
                 && grDisableAmmoPickups == other.grDisableAmmoPickups
                 && grRespawnTimer_HealthBoxes == other.grRespawnTimer_HealthBoxes
