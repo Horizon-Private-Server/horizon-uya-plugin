@@ -89,7 +89,7 @@ namespace Horizon.Plugin.UYA.Dme
 
 
         private void Log(string msg) {
-            plugin.Log(InternalLogLevel.INFO, msg);
+            //plugin.Log(InternalLogLevel.INFO, msg);
         }
 
 
