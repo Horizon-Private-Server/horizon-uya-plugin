@@ -21,6 +21,8 @@ namespace Horizon.Plugin.UYA.Dme
         public static WebSocketListener Server = null;
         private Plugin plugin;
 
+        private Task dequeueTask = null;
+
         public DmeRelayWebsocketServer(Plugin plugin)
         {
             this.plugin = plugin;
@@ -37,11 +39,11 @@ namespace Horizon.Plugin.UYA.Dme
             Server.StartAsync();
             plugin.Log(InternalLogLevel.INFO, "PLUGIN:DME: Accepting clients ...");
 
+            dequeueTask = Task.Run(() => DequeueTask());
+
             AcceptWebSocketClients();
             plugin.Log(InternalLogLevel.INFO, "PLUGIN:DME: Accepting clients ...");
 
-
-            DequeueTask();
 
         }
 
@@ -86,6 +88,10 @@ namespace Horizon.Plugin.UYA.Dme
         }
 
 
+        private void Log(string msg) {
+            plugin.Log(InternalLogLevel.INFO, msg);
+        }
+
 
         public async Task DequeueTask()
         {
@@ -93,55 +99,95 @@ namespace Horizon.Plugin.UYA.Dme
             try {
                 while (true)
                             {
+                                Log($"PLUGIN:DME:ITER Starting While loop!");
                                 try {
                                     if (ticker == 1000) {
-                                        plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: Ticking! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                                        plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME:ITER Ticking! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
                                         ticker = 1;
                                     }
-                                    ticker +=1 ;
-                                    if (Outgoing.Count != 0) {
-                                            String formatted = null;
-                                            Outgoing.TryDequeue(out formatted);
+                                    ticker +=1;
 
-                                            if (formatted == null) {
-                                                plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: Trying to send failing dequeue! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                                    Log($"PLUGIN:DME:ITER Starting If statement to Outgoing.Count!");
+                                    if (Outgoing.Count != 0) {
+
+                                            int totalToDequeue = Math.Min(Outgoing.Count, 10);
+
+                                            List<string> stringsList = new List<string>();
+
+                                            for (int i = 0; i < totalToDequeue; i++) {
+                                                String try_deq = null;
+                                                Outgoing.TryDequeue(out try_deq);
+                                                if (try_deq != null) {
+                                                    stringsList.Add(try_deq);
+                                                }
                                             }
 
+                                            // Combine the strings in the list into the final result string
+                                            String formatted = "[";
+                                            for (int i = 0; i < stringsList.Count; i++)
+                                            {
+                                                formatted += stringsList[i];
+                                                // Add comma if not the last element
+                                                if (i < stringsList.Count - 1)
+                                                {
+                                                    formatted += ",";
+                                                }
+                                            }
+                                            formatted += "]";
+
+
+                                            // String formatted = null;
+                                            // Outgoing.TryDequeue(out formatted);
+
+                                            Log($"PLUGIN:DME:ITER Outgoing count > 0!");
+
+
                                             List<WebSocketClient> ToRemove = new List<WebSocketClient>();
+
+                                            Log($"PLUGIN:DME:ITER Starting for loop of websocket connections!");
+
                                             foreach (var client in websocketConnections.Keys)
                                             {
+                                                Log($"PLUGIN:DME:ITER Iterating websocket connection!");
 
                                                 if (!client.IsConnected())
                                                 {
                                                     ToRemove.Add(client);
-                                                    plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: Disconnected websocket! Total websocket clients: {websocketConnections.Count-ToRemove.Count}");
+                                                    Log($"PLUGIN:DME: Disconnected websocket! Total websocket clients: {websocketConnections.Count-ToRemove.Count}");
                                                 }
                                                 else
                                                 {
-                                                    if (formatted != null) {
+                                                        Log($"PLUGIN:DME:ITER Pushing data!!");
+
                                                         try
                                                         {
+                                                            Log($"PLUGIN:DME:ITER Pushing data await!!");
                                                             await client.send(formatted);
+                                                            Log($"PLUGIN:DME:ITER Pushing data await done!!");
                                                         }
                                                         catch (Exception ex)
                                                         {
                                                             ToRemove.Add(client);
                                                             plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: Error sending data! Removing client! Total websocket clients: {websocketConnections.Count-ToRemove.Count}");
                                                         }
-                                                    }
-
                                                 }
                                             }
 
+                                            Log($"PLUGIN:DME:ITER Removing dead connections!");
                                             foreach (var remove in ToRemove)
                                                 websocketConnections.TryRemove(remove, out _);
+
+                                            Log($"PLUGIN:DME:ITER Done removing dead connections!");
+
                                         }
                                 }
                                 catch (Exception ex)
                                 {
                                     plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: Error sending data! Removing client! Total websocket clients: {websocketConnections.Count} | Error: {ex.ToString()}");
                                 }
+                                Log($"PLUGIN:DME:ITER Awaiting!");
                                 await Task.Delay(1);
+                                Log($"PLUGIN:DME:ITER Done Awaiting!");
                             }
             }
             catch (Exception ex)
@@ -160,9 +206,9 @@ namespace Horizon.Plugin.UYA.Dme
                     WebSocket socket = await Server.AcceptWebSocketAsync(c);
                     if (socket != null)
                     {
-                        WebSocketClient socketClient = new WebSocketClient(socket);
+                        WebSocketClient socketClient = new WebSocketClient(socket, plugin);
                         websocketConnections.TryAdd(socketClient, 0);
-                        plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: New client added to websockets! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                        plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME: New client added to websockets! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count} | Dequeue task status: {dequeueTask.Status}");
                     }      
                 }
                 catch (Exception ex)
