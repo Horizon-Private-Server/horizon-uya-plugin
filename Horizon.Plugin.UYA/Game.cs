@@ -581,7 +581,7 @@ namespace Horizon.Plugin.UYA
         public byte grRespawnTimer_WeaponCrates { get; set; }
         public byte grRespawnTimer_AmmoPickups { get; set; }
         public bool grAutoRespawn { get; set; }
-        public byte grSetGattlingTurretHealth { get; set; }
+        public byte grSetGatlingTurretHealth { get; set; }
         public bool grDisableDrones { get; set; }
         public bool grDisablePlayerTurret { get; set; }
         public bool grNoBaseDefense_Bots { get; set; }
@@ -619,7 +619,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grRespawnTimer_WeaponCrates);
                     writer.Write(grRespawnTimer_AmmoPickups);
                     writer.Write(grAutoRespawn);
-                    writer.Write(grSetGattlingTurretHealth);
+                    writer.Write(grSetGatlingTurretHealth);
                     writer.Write(grDisableDrones);
                     writer.Write(grDisablePlayerTurret);
                     writer.Write(grNoBaseDefense_Bots);
@@ -657,7 +657,7 @@ namespace Horizon.Plugin.UYA
             grRespawnTimer_WeaponCrates = reader.ReadByte();
             grRespawnTimer_AmmoPickups = reader.ReadByte();
             grAutoRespawn = reader.ReadBoolean();
-            grSetGattlingTurretHealth = reader.ReadByte();
+            grSetGatlingTurretHealth = reader.ReadByte();
             grDisableDrones = reader.ReadBoolean();
             grDisablePlayerTurret = reader.ReadBoolean();
             grNoBaseDefense_Bots = reader.ReadBoolean();
@@ -691,7 +691,7 @@ namespace Horizon.Plugin.UYA
                 && grRespawnTimer_WeaponCrates == other.grRespawnTimer_WeaponCrates
                 && grRespawnTimer_AmmoPickups == other.grRespawnTimer_AmmoPickups
                 && grAutoRespawn == other.grAutoRespawn
-                && grSetGattlingTurretHealth == other.grSetGattlingTurretHealth
+                && grSetGatlingTurretHealth == other.grSetGatlingTurretHealth
                 && grDisableDrones == other.grDisableDrones
                 && grDisablePlayerTurret == other.grDisablePlayerTurret
                 && grNoBaseDefense_Bots == other.grNoBaseDefense_Bots
