@@ -162,10 +162,11 @@ namespace Horizon.Plugin.UYA
         public byte cycleWeapon1 { get; set; }
         public byte cycleWeapon2 { get; set; }
         public byte cycleWeapon3 { get; set; }
+        public byte hypershotEquipBehavior { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[16];
+            byte[] output = new byte[17];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -186,6 +187,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(cycleWeapon1);
                     writer.Write(cycleWeapon2);
                     writer.Write(cycleWeapon3);
+                    writer.Write(hypershotEquipBehavior);
                 }
             }
 
@@ -210,6 +212,7 @@ namespace Horizon.Plugin.UYA
             cycleWeapon1 = reader.ReadByte();
             cycleWeapon2 = reader.ReadByte();
             cycleWeapon3 = reader.ReadByte();
+            hypershotEquipBehavior = reader.ReadByte();
         }
     }
 }
