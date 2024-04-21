@@ -105,6 +105,21 @@ namespace Horizon.Plugin.UYA
             // log
             await Program.Database.Log(client.AccountId, "OnPickedUpHorizonBolt", "Horizon Bolt Picked Up", $"Total {total}, current {current}", null, null);
         }
+        public static async Task OnPlayerWentAFK(ClientObject client, PlayerAFKStatus result)
+        {
+            var total = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_AFK_TOTAL_COUNT] += 1;
+            var afk = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_AFK_STATUS] = result.afk_status;
+
+            // send to db
+            await Server.Medius.Program.Database.PostAccountLadderCustomStats(new Server.Database.Models.StatPostDTO()
+            {
+                AccountId = client.AccountId,
+                Stats = client.CustomWideStats
+            });
+
+            // log
+            await Program.Database.Log(client.AccountId, "OnPlayerWentAFK", "Player Went AFK", $"Status {afk}, Total {total}", null, null);
+        }
 
         private static PlayerMetadata GetPlayerMetadata(ClientObject client)
         {
@@ -142,6 +157,11 @@ namespace Horizon.Plugin.UYA
     {
         public int CurrentMapVersion { get; set; }
         public byte[] PatchHash { get; set; }
+    }
+
+    public class PlayerAFKStatus
+    {
+        public int afk_status { get; set; }
     }
 
     public class PlayerConfig

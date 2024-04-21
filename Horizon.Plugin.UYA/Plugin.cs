@@ -902,6 +902,16 @@ namespace Horizon.Plugin.UYA
                                 msg.Player.Queue(response);
                                 break;
                             }
+                        case 23: // player went AFK
+                            {
+                                var request = new PlayerWentAFK();
+                                request.Deserialize(reader);
+
+                                // make sure the scavenger hunt is live
+                                var appSettings = GetAppSettingsOrDefault(msg.Player.ApplicationId);
+                                await Player.PlayerWentAFK(msg.Player, request.afk_status);
+                                break;
+                            }
                         default:
                             {
                                 Host.Log(InternalLogLevel.WARN, $"Unhandled custom msg id {customMsgId}: {msg}");
