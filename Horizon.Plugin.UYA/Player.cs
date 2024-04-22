@@ -215,7 +215,7 @@ namespace Horizon.Plugin.UYA
             cycleWeapon2 = reader.ReadByte();
             cycleWeapon3 = reader.ReadByte();
             hypershotEquipButton = reader.ReadByte();
-            disableDpadMovement = reader.ReadBool();
+            disableDpadMovement = reader.ReadBoolean();
         }
     }
 }
