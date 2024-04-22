@@ -907,9 +907,8 @@ namespace Horizon.Plugin.UYA
                                 var request = new PlayerWentAFK();
                                 request.Deserialize(reader);
 
-                                // make sure the scavenger hunt is live
                                 var appSettings = GetAppSettingsOrDefault(msg.Player.ApplicationId);
-                                await Player.PlayerWentAFK(msg.Player, request.afk_status);
+                                await Player.OnPlayerWentAFK(msg.Player, request);
                                 break;
                             }
                         default:
