@@ -43,6 +43,8 @@ namespace Horizon.Plugin.UYA
         
         public void Trigger(int account_id, string bot_class, string username, int world_id, int bolt) {
             Host.DebugLog("CPU Triggering!");
+            
+            return;
 
             RunTaskRequest request = new RunTaskRequest
             {
