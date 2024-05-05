@@ -62,7 +62,6 @@ namespace Horizon.Plugin.UYA
             if (RoboDb == null)
                 RoboDb = new RoboDatabase((Plugin)this);
 
-
             SyncRoboDbToHorizon();
 
             host.RegisterAction(PluginEvent.TICK, OnTick);
@@ -78,6 +77,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
             host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
+            host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_CLAN, OnUpdateClanStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
@@ -265,10 +265,36 @@ namespace Horizon.Plugin.UYA
                 request.Password = roboPassword;
             }
 
-            DebugLog("Returning!");
-
             return Task.CompletedTask;
         }
+
+        Task OnUpdateClanStats(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnUpdateClanStatsRequestArgs)data;
+
+            MediusUpdateClanStatsRequest request = (MediusUpdateClanStatsRequest)msg.Request;
+            int clanId = request.ClanID;
+            byte[] clanStats = request.Stats;
+
+            Task<List<ClanMessageDTO>> task = Server.Medius.Program.Database.GetClanMessages(0, clanId, 0, 1); // Call the async method
+            task.Wait(); // Wait for the async method to complete
+            // public async Task<> GetClanMessages(int accountId, int clanId, int startIndex, int pageSize)
+
+            if (task.Result == null){
+                return Task.CompletedTask;
+            }
+
+            List<ClanMessageDTO> clanMsgResult = task.Result;
+
+            if (clanMsgResult.Count == 0) {
+                return Task.CompletedTask;
+            }
+
+            string clanMessage = clanMsgResult[0].Message;
+            request.Stats = ClanStatsCleaner.CleanStats((Plugin)this, clanMessage, clanStats);
+            return Task.CompletedTask;
+        }
+        
 
         Task PreOnAccountCreateOnNotFound(PluginEvent eventId, object data)
         {
