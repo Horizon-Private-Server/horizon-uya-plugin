@@ -77,7 +77,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
             host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
-            host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_CLAN, OnUpdateClanStats);
+            host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
