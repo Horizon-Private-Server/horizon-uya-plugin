@@ -78,6 +78,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
+            host.RegisterAction(PluginEvent.MEDIUS_ON_ACCOUNT_UPDATE_STATS, OnAccountUpdateStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
@@ -294,7 +295,20 @@ namespace Horizon.Plugin.UYA
             request.Stats = ClanStatsCleaner.CleanStats((Plugin)this, clanMessage, clanStats);
             return Task.CompletedTask;
         }
+
+
+        Task OnAccountUpdateStats(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnAccountUpdateStatsArgs)data;
+            ClientObject player = (ClientObject)msg.Player;
         
+            MediusAccountUpdateStatsRequest request = (MediusAccountUpdateStatsRequest)msg.Request;
+
+            request.Stats = SkillBoltFixer.Fix((Plugin)this, player, request.Stats);
+
+            return Task.CompletedTask;
+        }
+
 
         Task PreOnAccountCreateOnNotFound(PluginEvent eventId, object data)
         {
