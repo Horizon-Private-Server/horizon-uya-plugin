@@ -490,6 +490,41 @@ namespace Horizon.Plugin.UYA
             return true;
         }
 
+        public (List<string>, List<int>) GetAccountAndAccountId(int numAccounts)
+        {
+            List<string> usernamesSelected = new List<string>();
+            List<int> accountIdsSelected = new List<int>();
+
+            for (int i = 0; i < numAccounts; i++) {
+                // Select the bot to use
+                Random random = new Random();
+                int randomNumber = random.Next(1, 999);
+                string formattedNumber = randomNumber.ToString("D3");
+
+                string username = "CPU-" + formattedNumber;
+
+                while (AccountIsLoggedIn(username) && !usernamesSelected.Contains(username)) {
+                    randomNumber = random.Next(1, 999);
+                    formattedNumber = randomNumber.ToString("D3");
+                    username = "CPU-" + formattedNumber;
+                    Log($"Testing: {username}");
+                }
+
+                // Get the account id from the username
+                Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(username, 10684); // Call the async method
+                task.Wait(); // Wait for the async method to complete
+
+                AccountDTO acc = task.Result;
+                int account_id = acc.AccountId;
+
+                usernamesSelected.Add(username);
+                accountIdsSelected.Add(account_id);
+
+            }
+
+            return (usernamesSelected, accountIdsSelected);
+        }
+
 
         Task OnFindPlayerAccountName(PluginEvent eventId, object data)
         {
@@ -498,7 +533,7 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
                 return Task.CompletedTask;
-            Log("GOT FIND PLAYER ACCOUNT NAME!!!");
+            //Log("GOT FIND PLAYER ACCOUNT NAME!!!");
             MediusFindPlayerRequest findPlayerRequest = (MediusFindPlayerRequest)msg.Request;
 
             ClientObject Player = (ClientObject)msg.Player;
@@ -508,81 +543,48 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;    
             }
 
-            string bot_class = "bot4";
-            int bolt = 4;
+            if (game.PlayerCount == 8) {
+                return Task.CompletedTask;
+            }
+            
+
             string req_name = findPlayerRequest.Name.ToLower();
 
-            if (req_name.StartsWith("cpu0")) {
-                bot_class = "bot0";
-                bolt = 1;
+            int profile = 1;
+            int skillLevel = 7;
+            int accountsToInvite = 8 - game.PlayerCount;
+            string bot_mode = "";
+
+            if (req_name == "ti") {
+                bot_mode = "training idle";
+                profile = 0;
             }
-            else if (req_name.StartsWith("cpu1")) {
-                bot_class = "bot1";
-                bolt = 1;
+            else if (req_name == "tp") {
+                bot_mode = "training passive";
+                profile = 0;
             }
-            else if (req_name.StartsWith("cpu2")) {
-                bot_class = "bot2";
-                bolt = 2;
-            }
-            else if (req_name.StartsWith("cpu3")) {
-                bot_class = "bot3";
-                bolt = 3;
-            }
-            else if (req_name.StartsWith("cpu4")) {
-                bot_class = "bot4";
-            }
-            else if (req_name.StartsWith("cpug")) {
-                bot_class = "botg";
+            else if (req_name == "a") {
+                bot_mode = "dynamic";
+                profile = 1;
             }
             else {
                 return Task.CompletedTask;
             }
 
-
-            // Select the bot to use
-            Random random = new Random();
-            int randomNumber = random.Next(1, 999);
-            string formattedNumber = randomNumber.ToString("D3");
-
-            string username = "CPU-" + formattedNumber;
-
-            Log($"Testing: {username}");
-
-            while (AccountIsLoggedIn(username)) {
-                randomNumber = random.Next(1, 999);
-                formattedNumber = randomNumber.ToString("D3");
-                username = "CPU-" + formattedNumber;
-                Log($"Testing: {username}");
+            if (profile != 0) {
+                accountsToInvite = 1;
             }
 
-            // Get the account id from the username
-            Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(username, 10684); // Call the async method
-            task.Wait(); // Wait for the async method to complete
+            var result = GetAccountAndAccountId(accountsToInvite);
+            List<string> accountNames = result.Item1;
+            List<int> accountIds = result.Item2;
 
-            //DebugLog($"Result: {task.ToString()}");
-
-            if (task.Result == null){
-                DebugLog("Couldn't find CPU ACCOUNT!");
-                return Task.CompletedTask;
-            }
-            AccountDTO acc = task.Result;
-            int account_id = acc.AccountId;
-
-            //int account_id = 880;
             int world_id = game.DMEWorldId+1;
-
-            Log($"Got world id: {world_id}");
-            Log($"Got username: {username}");
-            Log($"Got account id: {account_id}");
-            Log($"Got bolt: {bolt}");
-            Log($"Got bot_class: {bot_class}");
-            
-            
+                        
             Bot b = new Bot(this);
-            b.Trigger(account_id, bot_class, username, world_id, bolt);
+            b.Trigger(accountNames, accountIds, profile, bot_mode, skillLevel, world_id);
 
-            // int account_id, string bot_class, string username, int world_id, int bolt
-
+            findPlayerRequest.Name = Player.AccountName;
 
             return Task.CompletedTask;
         }
