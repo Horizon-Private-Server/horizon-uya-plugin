@@ -651,6 +651,10 @@ namespace Horizon.Plugin.UYA
             }
        }
 
+    public async Task<string> GetAccountMetadataAsync(int accountId) {
+        return await Server.Medius.Program.Database.GetAccountMetadata(accountId);
+    }
+
     public JObject GetAccountMetadata(int accountId) {
         Task<string> GetAccountMetadata = Server.Medius.Program.Database.GetAccountMetadata(accountId); 
         GetAccountMetadata.Wait(); 
@@ -845,9 +849,32 @@ namespace Horizon.Plugin.UYA
                             }
                         case 8: // set player patch config
                             {
+                                // Get current CpuGame status and save to a variable
+                                Server.Medius.Models.Game currentGame = msg.Player.CurrentGame;
+                                bool cpuGame = false;
+                                if (currentGame != null) {
+                                    int[] players = ConvertStringListToIntegers(currentGame.GetActivePlayerList());
+                                    cpuGame = IsCpuGameFromPlayerList(players);
+                                }
+
                                 var request = new SetPlayerPatchConfigRequestMessage();
                                 request.Deserialize(reader);
                                 await Player.SetPatchConfig(msg.Player, request.Config);
+
+                                // After setting the patch config, set the CpuGame status to what it should be before
+                                string currentMetadata = await GetAccountMetadataAsync(msg.Player.AccountId);
+
+                                JObject metadata = new JObject();
+                                if (currentMetadata != null) {
+                                    metadata = JObject.Parse(currentMetadata);
+                                }
+
+
+                                metadata["CpuGame"] = cpuGame;
+                                string updatedJsonString = JsonConvert.SerializeObject(metadata);
+
+                                await Server.Medius.Program.Database.PostAccountMetadata(msg.Player.AccountId, updatedJsonString);
+
                                 break;
                             }
                         case 9: // set patch game config
