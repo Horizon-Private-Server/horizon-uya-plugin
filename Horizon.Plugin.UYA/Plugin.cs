@@ -299,6 +299,7 @@ namespace Horizon.Plugin.UYA
 
         Task OnAccountUpdateStats(PluginEvent eventId, object data)
         {
+            return Task.CompletedTask;
             var msg = (Server.Medius.PluginArgs.OnAccountUpdateStatsArgs)data;
             ClientObject player = (ClientObject)msg.Player;
         
