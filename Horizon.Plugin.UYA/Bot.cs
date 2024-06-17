@@ -62,6 +62,7 @@ namespace Horizon.Plugin.UYA
         }
 
         public void Trigger(List<string> accountNames, List<int> accountIds, int profile, string bot_mode, int skillLevel, int world_id) {
+            Host.DebugLog($"CPU Triggering: {accountNames.Count} | {accountIds.Count} | {profile} | {bot_mode} | {skillLevel} | {world_id}");
 
             if (bot_mode == "training passive" || bot_mode == "training idle") {
                 List<int> profiles = getTrainingProfiles(accountNames.Count, world_id);
@@ -73,8 +74,6 @@ namespace Horizon.Plugin.UYA
                     TriggerSingle(accountName, accountId, thisProfile, bot_mode, world_id);
                 }
             }
-
-
 
             Host.DebugLog("CPU Triggering!");
             //Host.DebugLog($"CPU ACCOUNT NAMES: {accountNames}!");

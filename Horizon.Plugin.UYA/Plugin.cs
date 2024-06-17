@@ -547,58 +547,6 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
                 return Task.CompletedTask;
-            //Log("GOT FIND PLAYER ACCOUNT NAME!!!");
-            MediusFindPlayerRequest findPlayerRequest = (MediusFindPlayerRequest)msg.Request;
-
-            ClientObject Player = (ClientObject)msg.Player;
-
-            Server.Medius.Models.Game game = Player.CurrentGame;
-            if (game == null) {
-                return Task.CompletedTask;    
-            }
-
-            if (game.PlayerCount == 8) {
-                return Task.CompletedTask;
-            }
-            
-
-            string req_name = findPlayerRequest.Name.ToLower();
-
-            int profile = 1;
-            int skillLevel = 7;
-            int accountsToInvite = 8 - game.PlayerCount;
-            string bot_mode = "";
-
-            if (req_name == "ti") {
-                bot_mode = "training idle";
-                profile = 0;
-            }
-            else if (req_name == "tp") {
-                bot_mode = "training passive";
-                profile = 0;
-            }
-            else if (req_name == "a") {
-                bot_mode = "dynamic";
-                profile = 1;
-            }
-            else {
-                return Task.CompletedTask;
-            }
-
-            if (profile != 0) {
-                accountsToInvite = 1;
-            }
-
-            var result = GetAccountAndAccountId(accountsToInvite);
-            List<string> accountNames = result.Item1;
-            List<int> accountIds = result.Item2;
-
-            int world_id = game.DMEWorldId+1;
-                        
-            Bot b = new Bot(this);
-            b.Trigger(accountNames, accountIds, profile, bot_mode, skillLevel, world_id);
-
-            findPlayerRequest.Name = Player.AccountName;
 
             return Task.CompletedTask;
         }
@@ -969,6 +917,30 @@ namespace Horizon.Plugin.UYA
                                 response.Day = (byte)now.Day;
 
                                 msg.Player.Queue(response);
+                                break;
+                            }
+                        case 23: // bot invite
+                            {
+                                BotInviteRequestMessage request = new BotInviteRequestMessage();
+                                request.Deserialize(reader);
+                                Host.Log(InternalLogLevel.INFO, $"GOT BOT INVITE: {customMsgId}: {request}");
+
+                                Server.Medius.Models.Game game = msg.Player.CurrentGame;
+
+                                int accountsToInvite = 8 - game.PlayerCount;
+                                if (request.NumBotsToInvite != 0) {
+                                    accountsToInvite = request.NumBotsToInvite;
+                                }
+
+                                var result = GetAccountAndAccountId(accountsToInvite);
+                                List<string> accountNames = result.Item1;
+                                List<int> accountIds = result.Item2;
+
+                                int world_id = game.DMEWorldId+1;
+                                            
+                                Bot b = new Bot(this);
+                                b.Trigger(accountNames, accountIds, request.Profile, request.BotMode, request.Difficulty, world_id);
+
                                 break;
                             }
                         default:
