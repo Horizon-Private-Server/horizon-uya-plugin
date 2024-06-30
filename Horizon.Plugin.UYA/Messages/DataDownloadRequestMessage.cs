@@ -1,5 +1,6 @@
 ﻿using RT.Common;
 using RT.Models;
+using Server.Common;
 using Server.Common.Stream;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace Horizon.Plugin.UYA.Messages
 {
     public class DataDownloadRequestMessage : BasePluginMessage
     {
-        public const int MAX_DATA_SIZE = 2048;
+        public const int MAX_DATA_SIZE = 1362;
 
         public override byte CustomMsgId => 1;
         public override bool SkipEncryption { get => true; set { } }
@@ -18,6 +19,7 @@ namespace Horizon.Plugin.UYA.Messages
         public uint TargetAddress { get; set; }
         public int TotalSize { get; set; }
         public int DataOffset { get; set; }
+        public short Chunk { get; set; }
         public byte[] Data {get;set;}
 
         public override void Deserialize(MessageReader reader)
@@ -28,6 +30,7 @@ namespace Horizon.Plugin.UYA.Messages
             TargetAddress = reader.ReadUInt32();
             TotalSize = reader.ReadInt32();
             DataOffset = reader.ReadInt32();
+            Chunk = reader.ReadInt16();
             var len = reader.ReadInt16();
             Data = reader.ReadBytes(len);
         }
@@ -45,6 +48,7 @@ namespace Horizon.Plugin.UYA.Messages
             writer.Write(TargetAddress);
             writer.Write(TotalSize);
             writer.Write(DataOffset);
+            writer.Write(Chunk);
             writer.Write((short)len);
             if (Data != null)
                 writer.Write(Data, 0, len);

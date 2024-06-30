@@ -29,16 +29,17 @@ namespace Horizon.Plugin.UYA
 
         public static Task OnDataDownloadResponse(ClientObject client, DataDownloadResponseMessage response)
         {
-            return onDataDownloadResponse(client, response.Id, response.BytesReceived);
+            _ = onDataDownloadResponse(client, response.Id, response.BytesReceived);
+            return Task.CompletedTask;
         }
 
         public static Task InitiateDataDownload(ClientObject client, int id, IEnumerable<Payload> payloads, Func<ClientObject, int, Task> onFinishedCallback = null)
         {
-            if (_states.TryGetValue(client.AccountId, out var state))
-                throw new InvalidOperationException($"InitiateDataDownload triggered for {client.AccountId} with already existing state. {state}");
+            //if (_states.TryGetValue(client.AccountId, out var state))
+            //    throw new InvalidOperationException($"InitiateDataDownload triggered for {client.AccountId} with already existing state. {state}");
 
             // add state
-            state = new DownloaderState(id, payloads)
+            var state = new DownloaderState(id, payloads)
             {
                 OnFinished = onFinishedCallback
             };
@@ -57,17 +58,39 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        private static Task onDataDownloadResponse(ClientObject client, int id, int bytesReceived)
+        public static Task OnPlayerLoggedIn(ClientObject client)
         {
+            if (_states.ContainsKey(client.AccountId))
+                _states.Remove(client.AccountId);
+
+            return Task.CompletedTask;
+        }
+
+        private static async Task onDataDownloadResponse(ClientObject client, int id, int bytesReceived)
+        {
+            const int chunkCount = 10;
+
             if (!_states.TryGetValue(client.AccountId, out var state))
                 throw new InvalidOperationException($"onDataDownloadResponse triggered for {client.AccountId} with no active state. {id}");
 
             if (state.Id != id)
                 throw new InvalidOperationException($"onDataDownloadResponse triggered for {client.AccountId} with active state id {state.Id} with id {id}");
 
+            // check for end
+            if (bytesReceived >= state.Payloads.Sum(x => x.Data.Length))
+            {
+                // remove from active
+                _states.Remove(client.AccountId);
+
+                // invoke finish callback
+                if (state.OnFinished != null)
+                    await state.OnFinished(client, id);
+
+                return;
+            }
+
             // find next segment
             int segIdx = 0;
-
             foreach (var payload in state.Payloads)
             {
                 if (bytesReceived < payload.Data.Length)
@@ -77,34 +100,36 @@ namespace Horizon.Plugin.UYA
                 segIdx++;
             }
 
-            // if not finished
-            if (segIdx < state.Payloads.Count)
+            for (int chunk = chunkCount - 1; chunk >= 0; --chunk)
             {
-                Payload payload = state.Payloads[segIdx];
-
-                // grab data block
-                var msgData = payload.Data.Skip(bytesReceived).Take(DataDownloadRequestMessage.MAX_DATA_SIZE).ToArray();
-
-                client.Queue(new DataDownloadRequestMessage()
+                while (segIdx < state.Payloads.Count && state.Payloads[segIdx].Data.Length <= bytesReceived)
                 {
-                    Id = state.Id,
-                    Data = msgData,
-                    TargetAddress = (uint)(payload.Address + bytesReceived),
-                    TotalSize = state.TotalSize,
-                    DataOffset = bytesReceived
-                });
-            }
-            else
-            {
-                // remove from active
-                _states.Remove(client.AccountId);
+                    bytesReceived -= state.Payloads[segIdx].Data.Length;
+                    segIdx++;
+                }
 
-                // invoke finish callback
-                if (state.OnFinished != null)
-                    return state.OnFinished(client, id);
-            }
+                // if not finished
+                if (segIdx < state.Payloads.Count)
+                {
+                    Payload payload = state.Payloads[segIdx];
 
-            return Task.CompletedTask;
+                    // grab data block
+                    var msgData = payload.Data.Skip(bytesReceived).Take(DataDownloadRequestMessage.MAX_DATA_SIZE).ToArray();
+
+                    client.Queue(new DataDownloadRequestMessage()
+                    {
+                        Id = state.Id,
+                        Data = msgData,
+                        TargetAddress = (uint)(payload.Address + bytesReceived),
+                        TotalSize = state.TotalSize,
+                        Chunk = (short)chunk,
+                        DataOffset = bytesReceived
+                    });
+
+                    bytesReceived += msgData.Length;
+                    await Task.Delay(1);
+                }
+            }
         }
     }
 }
