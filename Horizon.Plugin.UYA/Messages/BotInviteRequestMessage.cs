@@ -30,19 +30,23 @@ namespace Horizon.Plugin.UYA.Messages
 
             switch (RawBotMode) {
                 case 0:
-                    BotMode = "training idle";
+                    BotMode = "dynamic";
                     break;
                 case 1:
+                    BotMode = "training idle";
+                    break;
+                case 2:
                     BotMode = "training passive";
                     break;
             }
 
-            if (RawDiffulty <= 5) {
-                Difficulty = (int)RawDiffulty + 5;
-            }
-            else {
-                Difficulty = (int)RawDiffulty - 5;
-            }
+            Difficulty = (int)RawDiffulty+1;
+            // if (RawDiffulty <= 5) {
+            //     Difficulty = (int)RawDiffulty + 5;
+            // }
+            // else {
+            //     Difficulty = (int)RawDiffulty - 5;
+            // }
 
             Profile = (int)RawProfile;
         }
