@@ -102,7 +102,7 @@ namespace Horizon.Plugin.UYA.Dme
                                 Log($"PLUGIN:DME:ITER Starting While loop!");
                                 try {
                                     if (ticker == 1000) {
-                                        plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME:ITER Ticking! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
+                                        //plugin.Log(InternalLogLevel.INFO, $"PLUGIN:DME:ITER Ticking! Total websocket clients: {websocketConnections.Count} | Total Queue: {Outgoing.Count}");
                                         ticker = 1;
                                     }
                                     ticker +=1;

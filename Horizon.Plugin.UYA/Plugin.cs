@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using BCrypt.Net;
 
 
 namespace Horizon.Plugin.UYA
@@ -36,6 +37,8 @@ namespace Horizon.Plugin.UYA
         // Disable for now.
         //public static RoboApi Api = null;
         public static RoboDatabase RoboDb = null;
+
+        public static string RoboSalt = Environment.GetEnvironmentVariable("ROBO_SALT");
 
         // db appsettings
         private static bool hasQueriedAppSettings = false;
@@ -224,7 +227,7 @@ namespace Horizon.Plugin.UYA
         }
 
         
-        Task OnAccountLogin(PluginEvent eventId, object data)
+        async Task OnAccountLogin(PluginEvent eventId, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnAccountLoginRequestArgs)data;
             
@@ -232,41 +235,46 @@ namespace Horizon.Plugin.UYA
             ClientObject Player = (ClientObject)msg.Player;
 
             if (msg.Player == null)
-                return Task.CompletedTask;
+                return;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return Task.CompletedTask;
-
+                return;
             if (request.Username == null)
-                return Task.CompletedTask;
+                return;
 
-
-            if (RoboDb != null && RoboDb.AccountExists(request.Username)) {
-                // If password = Robo hashed password, then change the password to be the robo encrypted PW?
-                string roboPassword = RoboDb.GetPassword(request.Username);
-
-                DebugLog($"Got robo pw: {roboPassword}");
-
-                //Check if account already exists in database
-                Task<AccountDTO> task = Server.Medius.Program.Database.GetAccountByName(request.Username, 10684); // Call the async method
-                task.Wait(); // Wait for the async method to complete
-
-                if (task.Result == null){
-                    return Task.CompletedTask;
-                }
-
-                DebugLog($"Got request pw: {request.Password}");
-
-
-                if (RoboDb.EncryptString(request.Password) != roboPassword) {
-                    DebugLog("Passwords don't match!");
-                    return Task.CompletedTask;
-                }
-
-                // passwords match
-                request.Password = roboPassword;
+            AccountDTO acc = await Server.Medius.Program.Database.GetAccountByName(request.Username, msg.Player.ApplicationId); // Call the async method
+            if (acc == null) {
+                return;
             }
 
-            return Task.CompletedTask;
+            // After setting the patch config, set the CpuGame status to what it should be before
+            string currentMetadata = await GetAccountMetadataAsync(acc.AccountId);
+            if (currentMetadata == null) { // No Metadata
+                return;
+            }
+
+            JObject metadata = new JObject();
+            metadata = JObject.Parse(currentMetadata);
+            // If metadata doesn't contain RoboPw, we can return
+            if (!metadata.ContainsKey("RoboPw")) {
+                return;
+            }
+            string robopw = metadata["RoboPw"].ToString();
+
+            string s = request.Password;
+            // If robopw matches encrypted current pw, then lets reset their PW and let them in
+            // First SHA512:
+            string shad = Utils.ComputeSHA512(s).ToUpper();
+            DebugLog($"SHA512 String: Before: {s} After: {shad}");
+
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(shad, RoboSalt);
+            DebugLog($"Encrypted String: Before (need {robopw}): {s} After: {hashedPassword} | Using salt: {RoboSalt}");
+
+            if (robopw == hashedPassword) { // Set reset PW on login
+                DebugLog($"Robo PW Match for: {request.Username}");
+                await Server.Medius.Program.Database.ResetAccountPassword(request.Username, msg.Player.ApplicationId);
+            }
+
+            return;
         }
 
         Task OnUpdateClanStats(PluginEvent eventId, object data)
