@@ -82,6 +82,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_ACCOUNT_LOGIN_REQUEST, OnAccountLogin);
             host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
             host.RegisterAction(PluginEvent.MEDIUS_ON_ACCOUNT_UPDATE_STATS, OnAccountUpdateStats);
+            host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_CHAT_MESSAGE, OnPlayerChatMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
@@ -588,6 +589,18 @@ namespace Horizon.Plugin.UYA
 
             // pass to game
             return Game.PlayerJoined(client, game);
+        }
+
+
+        Task OnPlayerChatMessage(PluginEvent eventId, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnPlayerChatMessageArgs)data;
+            if (msg.Player == null || msg.Player.CurrentChannel == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            return Chat.OnChatMessage(msg.Player, msg.Message);
         }
 
 
