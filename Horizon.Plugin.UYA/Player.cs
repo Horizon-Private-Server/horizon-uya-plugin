@@ -142,6 +142,7 @@ namespace Horizon.Plugin.UYA
     {
         public int CurrentMapVersion { get; set; }
         public byte[] PatchHash { get; set; }
+        public string LastChatCommand { get; set; }
     }
 
     public class PlayerConfig
