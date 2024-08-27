@@ -38,6 +38,9 @@ namespace Horizon.Plugin.UYA.Messages
                 case 2:
                     BotMode = "training passive";
                     break;
+                case 3:
+                    BotMode = "god";
+                    break;
             }
 
             Difficulty = (int)RawDiffulty+1;

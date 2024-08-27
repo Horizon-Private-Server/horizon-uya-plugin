@@ -110,6 +110,9 @@ namespace Horizon.Plugin.UYA
             else if (bot_mode == "dynamic") {
                 profiles = getDynamicProfiles(accountNames.Count, skillLevel, world_id);
             }
+            else if (bot_mode == "god") {
+                profiles = getDynamicProfiles(accountNames.Count, 7, world_id);
+            }
 
 
             for (int i = 0; i < accountNames.Count; i++) {
