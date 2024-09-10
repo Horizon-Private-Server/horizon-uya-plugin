@@ -91,6 +91,8 @@ namespace Horizon.Plugin.UYA
         }
 
         public void SyncRoboDbToHorizon() {
+
+            return;
             DebugLog("Syncing robo db to horizon ...");
 
             if (RoboDb == null)
