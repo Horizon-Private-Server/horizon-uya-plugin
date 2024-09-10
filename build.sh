@@ -17,5 +17,3 @@ docker run -v "${PWD}/out/":/mnt/out -it uya_plugin
 
 sudo chmod a+rw out -R
 
-cp -r out/medius/* ../horizon-server/docker/medius_plugins
-cp -r out/dme/* ../horizon-server/docker/dme_plugins
