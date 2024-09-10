@@ -68,7 +68,7 @@ namespace Horizon.Plugin.UYA
 
         private static async Task onDataDownloadResponse(ClientObject client, int id, int bytesReceived)
         {
-            const int chunkCount = 10;
+            const int chunkCount = 5;
 
             if (!_states.TryGetValue(client.AccountId, out var state))
                 throw new InvalidOperationException($"onDataDownloadResponse triggered for {client.AccountId} with no active state. {id}");
