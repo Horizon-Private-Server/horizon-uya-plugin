@@ -11,8 +11,7 @@ namespace Horizon.Plugin.UYA
         static readonly BaseCustomMode[] CustomModes = new BaseCustomMode[]
         {
             new SpleefCustomMode(),
-            new InfectedCustomMode(),
-            new JuggernaughtCustomMode()
+            new JuggernautCustomMode()
         };
 
         public static BaseCustomMode FindCustomModeById(CustomModeId id)
@@ -25,8 +24,8 @@ namespace Horizon.Plugin.UYA
     public enum CustomModeId : sbyte
     {
         // custom mode ids
-        CMODE_ID_INFECTED = 1,
-        CMODE_ID_JUGGERNAUGHT = 2,
+        CMODE_ID_JUGGERNAUT = 1,
+        CMODE_ID_INFECTED = 2,
 
         // reserved for custom maps
         CMODE_ID_SPLEEF = -1,
