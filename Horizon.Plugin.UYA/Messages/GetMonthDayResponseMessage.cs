@@ -15,6 +15,9 @@ namespace Horizon.Plugin.UYA.Messages
 
         public byte Month { get; set; }
         public byte Day { get; set; }
+        public byte Hour { get; set; }
+        public byte Minute { get; set; }
+        public byte Second { get; set; }
 
         public override void Deserialize(MessageReader reader)
         {

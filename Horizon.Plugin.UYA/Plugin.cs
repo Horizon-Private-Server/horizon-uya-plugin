@@ -923,9 +923,13 @@ namespace Horizon.Plugin.UYA
                                 request.Deserialize(reader);
 
                                 var now = DateTime.UtcNow;
+                                var time = DateTime.UtcNow.TimeOfDay;
                                 var response = new GetMonthDayResponseMessage();
                                 response.Month = (byte)now.Month;
                                 response.Day = (byte)now.Day;
+                                response.Hour = (byte)time.Hours;
+                                response.Minute = (byte)time.Minutes;
+                                response.Second = (byte)time.Seconds;
 
                                 msg.Player.Queue(response);
                                 break;
