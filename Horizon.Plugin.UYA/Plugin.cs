@@ -701,7 +701,7 @@ namespace Horizon.Plugin.UYA
 
             switch (cheatQuery.SequenceId)
             {
-                case 25:
+                case 101:
                     {
                         msg.Ignore = true;
                         await Patch.QueryForPatchResponse(msg.Player, cheatQuery);
