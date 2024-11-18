@@ -590,6 +590,7 @@ namespace Horizon.Plugin.UYA
         public byte grVampire { get; set; }
         public bool grFluxShotsAlwaysHit { get; set; }
         public bool grFluxNikingDisabled { get; set; }
+        public bool grWeaponShotLag { get; set; }
         public bool grFlagHotspots { get; set; }
         public bool grDestructableBridges { get; set; }
         public bool prSurvivor { get; set; }
@@ -599,7 +600,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[31];
+            byte[] output = new byte[32];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -629,6 +630,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grVampire);
                     writer.Write(grFluxShotsAlwaysHit);
                     writer.Write(grFluxNikingDisabled);
+                    writer.Write(grWeaponShotLag);
                     writer.Write(grFlagHotspots);
                     writer.Write(grDestructableBridges);
                     writer.Write(prSurvivor);
@@ -668,6 +670,7 @@ namespace Horizon.Plugin.UYA
             grVampire = reader.ReadByte();
             grFluxShotsAlwaysHit = reader.ReadBoolean();
             grFluxNikingDisabled = reader.ReadBoolean();
+            grWeaponShotLag = reader.ReadBoolean();
             grFlagHotspots = reader.ReadBoolean();
             grDestructableBridges = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
@@ -703,6 +706,7 @@ namespace Horizon.Plugin.UYA
                 && grVampire == other.grVampire
                 && grFluxShotsAlwaysHit == other.grFluxShotsAlwaysHit
                 && grFluxNikingDisabled == other.grFluxNikingDisabled
+                && grWeaponShotLag == other.grWeaponShotLag
                 && grFlagHotspots == other.grFlagHotspots
                 && grDestructableBridges == other.grDestructableBridges
                 && prSurvivor == other.prSurvivor
