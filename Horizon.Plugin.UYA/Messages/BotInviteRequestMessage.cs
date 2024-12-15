@@ -33,12 +33,15 @@ namespace Horizon.Plugin.UYA.Messages
                     BotMode = "dynamic";
                     break;
                 case 1:
-                    BotMode = "training idle";
+                    BotMode = "static";
                     break;
                 case 2:
                     BotMode = "training passive";
                     break;
                 case 3:
+                    BotMode = "training idle";
+                    break;
+                case 4:
                     BotMode = "god";
                     break;
             }

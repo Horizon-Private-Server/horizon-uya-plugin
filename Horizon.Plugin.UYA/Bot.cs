@@ -104,7 +104,7 @@ namespace Horizon.Plugin.UYA
 
             List<int> profiles = null;
 
-            if (bot_mode == "training passive" || bot_mode == "training idle") {
+            if (bot_mode == "training passive" || bot_mode == "training idle" || bot_mode == "static") {
                 profiles = getTrainingProfiles(accountNames.Count, world_id);
             }
             else if (bot_mode == "dynamic") {
