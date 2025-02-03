@@ -153,6 +153,7 @@ namespace Horizon.Plugin.UYA
         public byte playerFov { get; set; }
         public bool enableSpectate { get; set; }
         public bool alwaysShowHealth { get; set; }
+        public bool hideFluxReticle { get; set; }
         public byte mapScoreToggle_MapBtn { get; set; }
         public byte mapScoreToggle_ScoreBtn { get; set; }
         public bool disableScavengerHunt { get; set; }
@@ -168,7 +169,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[19];
+            byte[] output = new byte[20];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -180,6 +181,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(playerFov);
                     writer.Write(enableSpectate);
                     writer.Write(alwaysShowHealth);
+                    writer.Write(hideFluxReticle);
                     writer.Write(mapScoreToggle_MapBtn);
                     writer.Write(mapScoreToggle_ScoreBtn);
                     writer.Write(disableScavengerHunt);
@@ -207,6 +209,7 @@ namespace Horizon.Plugin.UYA
             playerFov = reader.ReadByte();
             enableSpectate = reader.ReadBoolean();
             alwaysShowHealth = reader.ReadBoolean();
+            hideFluxReticle = reader.ReadBoolean();
             mapScoreToggle_MapBtn = reader.ReadByte();
             mapScoreToggle_ScoreBtn = reader.ReadByte();
             disableScavengerHunt = reader.ReadBoolean();
