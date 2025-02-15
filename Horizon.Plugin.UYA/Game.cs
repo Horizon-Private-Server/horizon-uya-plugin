@@ -597,10 +597,11 @@ namespace Horizon.Plugin.UYA
         public bool prChargebootForever { get; set; }
         public byte prPlayerSize { get; set; }
         public bool prLoadoutWeaponsOnly { get; set; }
+        public bool prGravityBombTweakers { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[32];
+            byte[] output = new byte[33];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -637,6 +638,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(prChargebootForever);
                     writer.Write(prPlayerSize);
                     writer.Write(prLoadoutWeaponsOnly);
+                    writer.Write(prGravityBombTweakers);
                 }
             }
 
@@ -677,6 +679,7 @@ namespace Horizon.Plugin.UYA
             prChargebootForever = reader.ReadBoolean();
             prPlayerSize = reader.ReadByte();
             prLoadoutWeaponsOnly = reader.ReadBoolean();
+            prGravityBombTweakers = reader.ReadBoolean();
         }
 
         public bool SameAs(GameConfig other)
@@ -713,6 +716,7 @@ namespace Horizon.Plugin.UYA
                 && prChargebootForever == other.prChargebootForever
                 && prPlayerSize == other.prPlayerSize
                 && prLoadoutWeaponsOnly == other.prLoadoutWeaponsOnly
+                && prGravityBombTweakers == other.prGravityBombTweakers
                 ;
         }
     }
