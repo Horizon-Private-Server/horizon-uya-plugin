@@ -165,10 +165,11 @@ namespace Horizon.Plugin.UYA
         public byte hypershotEquipButton { get; set; }
         public bool disableDpadMovement { get; set; }
         public bool enablePlayerSync { get; set; }
+        public bool hideFluxReticle { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[19];
+            byte[] output = new byte[20];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -192,6 +193,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(hypershotEquipButton);
                     writer.Write(disableDpadMovement);
                     writer.Write(enablePlayerSync);
+                    writer.Write(hideFluxReticle);
                 }
             }
 
@@ -219,6 +221,7 @@ namespace Horizon.Plugin.UYA
             hypershotEquipButton = reader.ReadByte();
             disableDpadMovement = reader.ReadBoolean();
             enablePlayerSync = reader.ReadBoolean();
+            hideFluxReticle = reader.ReadBoolean();
         }
     }
 }
