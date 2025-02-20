@@ -570,7 +570,7 @@ namespace Horizon.Plugin.UYA
         public byte grRespawnTimer_Player { get; set; }
         public bool grRespawnInvicibility { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
-        public byte grDisableWeaponPacks { get; set; }
+        public bool grDisableWeaponPacks { get; set; }
         public byte grV2s { get; set; }
         public bool grNoCooldown { get; set; }
         public bool grHealthBars { get; set; }
@@ -590,18 +590,16 @@ namespace Horizon.Plugin.UYA
         public byte grVampire { get; set; }
         public bool grFluxShotsAlwaysHit { get; set; }
         public bool grFluxNikingDisabled { get; set; }
-        public bool grWeaponShotLag { get; set; }
         public bool grFlagHotspots { get; set; }
         public bool grDestructableBridges { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
-        public byte prPlayerSize { get; set; }
         public bool prLoadoutWeaponsOnly { get; set; }
         public bool prGravityBombTweakers { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[33];
+            byte[] output = new byte[31];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -631,12 +629,10 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grVampire);
                     writer.Write(grFluxShotsAlwaysHit);
                     writer.Write(grFluxNikingDisabled);
-                    writer.Write(grWeaponShotLag);
                     writer.Write(grFlagHotspots);
                     writer.Write(grDestructableBridges);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
-                    writer.Write(prPlayerSize);
                     writer.Write(prLoadoutWeaponsOnly);
                     writer.Write(prGravityBombTweakers);
                 }
@@ -652,7 +648,7 @@ namespace Horizon.Plugin.UYA
             grRespawnTimer_Player = reader.ReadByte();
             grRespawnInvicibility = reader.ReadBoolean();
             grDisablePenaltyTimers = reader.ReadBoolean();
-            grDisableWeaponPacks = reader.ReadByte();
+            grDisableWeaponPacks = reader.ReadBoolean();
             grV2s = reader.ReadByte();
             grNoCooldown = reader.ReadBoolean();
             grHealthBars = reader.ReadBoolean();
@@ -672,12 +668,10 @@ namespace Horizon.Plugin.UYA
             grVampire = reader.ReadByte();
             grFluxShotsAlwaysHit = reader.ReadBoolean();
             grFluxNikingDisabled = reader.ReadBoolean();
-            grWeaponShotLag = reader.ReadBoolean();
             grFlagHotspots = reader.ReadBoolean();
             grDestructableBridges = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
-            prPlayerSize = reader.ReadByte();
             prLoadoutWeaponsOnly = reader.ReadBoolean();
             prGravityBombTweakers = reader.ReadBoolean();
         }
@@ -709,12 +703,10 @@ namespace Horizon.Plugin.UYA
                 && grVampire == other.grVampire
                 && grFluxShotsAlwaysHit == other.grFluxShotsAlwaysHit
                 && grFluxNikingDisabled == other.grFluxNikingDisabled
-                && grWeaponShotLag == other.grWeaponShotLag
                 && grFlagHotspots == other.grFlagHotspots
                 && grDestructableBridges == other.grDestructableBridges
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
-                && prPlayerSize == other.prPlayerSize
                 && prLoadoutWeaponsOnly == other.prLoadoutWeaponsOnly
                 && prGravityBombTweakers == other.prGravityBombTweakers
                 ;
