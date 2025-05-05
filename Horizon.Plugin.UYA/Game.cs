@@ -565,6 +565,7 @@ namespace Horizon.Plugin.UYA
 
     public class GameConfig
     {
+        public byte isCustomMap { get; set; }
         public byte GamemodeOverride { get; set; }
         public byte grRadarBlipsDistance { get; set; }
         public byte grRespawnTimer_Player { get; set; }
@@ -599,11 +600,12 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[31];
+            byte[] output = new byte[32];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
                 {
+                    writer.Write(isCustomMap);
                     writer.Write(GamemodeOverride);
                     writer.Write(grRadarBlipsDistance);
                     writer.Write(grRespawnTimer_Player);
@@ -643,6 +645,7 @@ namespace Horizon.Plugin.UYA
 
         public void Deserialize(MessageReader reader)
         {
+            isCustomMap = reader.ReadByte();
             GamemodeOverride = reader.ReadByte();
             grRadarBlipsDistance = reader.ReadByte();
             grRespawnTimer_Player = reader.ReadByte();
@@ -678,7 +681,8 @@ namespace Horizon.Plugin.UYA
 
         public bool SameAs(GameConfig other)
         {
-            return GamemodeOverride == other.GamemodeOverride
+            return isCustomMap == other.isCustomMap
+                && GamemodeOverride == other.GamemodeOverride
                 && grRadarBlipsDistance == other.grRadarBlipsDistance
                 && grRespawnTimer_Player == other.grRespawnTimer_Player
                 && grRespawnInvicibility == other.grRespawnInvicibility
