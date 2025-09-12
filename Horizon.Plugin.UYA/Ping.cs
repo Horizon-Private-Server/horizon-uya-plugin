@@ -46,19 +46,19 @@ namespace Horizon.Plugin.UYA
                 while (client != null && client.IsConnected && playerInfo != null && playerInfo.PatchHash != null)
                 {
                     if (client.CurrentGame != null && client.CurrentGame.WorldStatus == MediusWorldStatus.WorldActive && playerInfo.PlayerInGame == 1) {
-                        //host.Log(InternalLogLevel.INFO, $"UYA Ping completed for {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
+                        host.Log(InternalLogLevel.INFO, $"UYA Ping completed for {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
                         client.Queue(new SendPingRequestMessage(){
                                 CurrentPingMs = playerInfo.CurrentPingMs
                         });
                     }
                     else {
-                        //host.Log(InternalLogLevel.INFO, $"UYA Ping NOT IN GAME YET! {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
+                        host.Log(InternalLogLevel.INFO, $"UYA Ping NOT IN GAME YET! {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
                         playerInfo.CurrentPingMs = 0;
                     }
                     await Task.Delay(PingDelayMs);
                 }
 
-                //host.Log(InternalLogLevel.INFO, $"UYA Ping completed for {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
+                host.Log(InternalLogLevel.INFO, $"UYA Ping finished for {client?.AccountId} (lastping: {playerInfo.CurrentPingMs}ms");
             }
             catch (Exception ex)
             {

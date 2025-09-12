@@ -12,7 +12,7 @@ namespace Horizon.Plugin.UYA.Messages
 {
     public class SendPingRequestMessage : BasePluginMessage
     {
-        public override byte CustomMsgId => 26;
+        public override byte CustomMsgId => 28;
         public override bool SkipEncryption { get => true; set { } }
 
         public long NowMs { get; set; }

@@ -973,8 +973,8 @@ namespace Horizon.Plugin.UYA
                                 var playerInfo = Player.GetPlayerExtraInfo(msg.Player.AccountId);
                                 playerInfo.CurrentPingMs = pingMs;
 
-                                // Host.Log(InternalLogLevel.INFO,
-                                //     $"GOT PING: {customMsgId}: sent={request.NowMs} now={now} ping={pingMs}ms");
+                                Host.Log(InternalLogLevel.INFO,
+                                    $"GOT PING: {customMsgId}: sent={request.NowMs} now={now} ping={pingMs}ms");
 
                                 break;
                             }
