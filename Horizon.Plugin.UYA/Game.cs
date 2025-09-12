@@ -597,6 +597,7 @@ namespace Horizon.Plugin.UYA
         public byte grAllNodesTimer { get; set; }
         public byte grNodeSelectTimer { get; set; }
         public bool grSiegeNoTies { get; set; }
+        public bool grNewPlayerSync { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
         public bool prLoadoutWeaponsOnly { get; set; }
@@ -605,7 +606,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[37];
+            byte[] output = new byte[38];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -642,6 +643,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grAllNodesTimer);
                     writer.Write(grNodeSelectTimer);
                     writer.Write(grSiegeNoTies);
+                    writer.Write(grNewPlayerSync);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
                     writer.Write(prLoadoutWeaponsOnly);
@@ -687,6 +689,7 @@ namespace Horizon.Plugin.UYA
             grAllNodesTimer = reader.ReadByte();
             grNodeSelectTimer = reader.ReadByte();
             grSiegeNoTies = reader.ReadBoolean();
+            grNewPlayerSync = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
             prLoadoutWeaponsOnly = reader.ReadBoolean();
@@ -728,6 +731,7 @@ namespace Horizon.Plugin.UYA
                 && grAllNodesTimer == other.grAllNodesTimer
                 && grNodeSelectTimer == other.grNodeSelectTimer
                 && grSiegeNoTies == other.grSiegeNoTies
+                && grNewPlayerSync == other.grNewPlayerSync
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
                 && prLoadoutWeaponsOnly == other.prLoadoutWeaponsOnly
