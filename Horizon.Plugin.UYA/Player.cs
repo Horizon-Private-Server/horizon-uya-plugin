@@ -142,6 +142,8 @@ namespace Horizon.Plugin.UYA
     {
         public int CurrentMapVersion { get; set; }
         public byte[] PatchHash { get; set; }
+        public int CurrentPingMs { get; set; }
+        public int PlayerInGame { get; set; }
     }
 
     public class PlayerConfig

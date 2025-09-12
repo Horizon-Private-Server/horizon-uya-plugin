@@ -367,6 +367,9 @@ namespace Horizon.Plugin.UYA
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
                 return Task.CompletedTask;
 
+            // fire-and-forget, acknowledged
+            _ = UYAPing.Start(msg.Player, Host);
+            
             return Patch.QueryForPatch(msg.Player);
         }
 
@@ -574,6 +577,7 @@ namespace Horizon.Plugin.UYA
             var client = msg.Player;
             var game = msg.Game;
             var playerExtraInfo = Player.GetPlayerExtraInfo(client.AccountId);
+            playerExtraInfo.PlayerInGame = 1;
 
             Server.Medius.Models.Game gameObj = msg.Game;
             int[] players = ConvertStringListToIntegers(gameObj.GetActivePlayerList());
@@ -958,6 +962,30 @@ namespace Horizon.Plugin.UYA
 
                                 break;
                             }
+                        case 28: // server ping
+                            {
+                                var request = new SendPingRequestMessage();
+                                request.Deserialize(reader);
+
+                                long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                                int pingMs = (int) (now - request.NowMs);
+
+                                var playerInfo = Player.GetPlayerExtraInfo(msg.Player.AccountId);
+                                playerInfo.CurrentPingMs = pingMs;
+
+                                // Host.Log(InternalLogLevel.INFO,
+                                //     $"GOT PING: {customMsgId}: sent={request.NowMs} now={now} ping={pingMs}ms");
+
+                                break;
+                            }
+
+                        case 29: // game is at end screen
+                            {
+                                var playerInfo = Player.GetPlayerExtraInfo(msg.Player.AccountId);
+                                playerInfo.PlayerInGame = 0;
+                                break;
+                            }
+                        
                         default:
                             {
                                 Host.Log(InternalLogLevel.WARN, $"Unhandled custom msg id {customMsgId}: {msg}");
