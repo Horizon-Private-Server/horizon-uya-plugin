@@ -11,9 +11,9 @@ using Server.Common;
 using System.Text.Json;
 using Server.Database.Models;
 using Server.Medius.Models;
-using System.Data.SQLite;
 using BCrypt.Net;
 using System.Collections.Generic;
+using Microsoft.Data.Sqlite;
 
 namespace Horizon.Plugin.UYA
 {
@@ -22,7 +22,7 @@ namespace Horizon.Plugin.UYA
 
         public static Plugin Plugin = null;
         public static Plugin Host = null;
-        SQLiteConnection Sql_con = null;
+        SqliteConnection Sql_con = null;
         public static string RoboSalt = Environment.GetEnvironmentVariable("ROBO_SALT");
 
 
@@ -31,7 +31,7 @@ namespace Horizon.Plugin.UYA
             Host = host;
 
             if (Sql_con == null)
-                Sql_con = new SQLiteConnection("Data Source=/database/database.db;Version=3;New=False;");
+                Sql_con = new SqliteConnection("Data Source=/database/database.db;Version=3;New=False;");
 
             Host.DebugLog("Robo Database connecting to authenticate!");
             Host.DebugLog("Using SALT: " + RoboSalt);
@@ -58,7 +58,7 @@ namespace Horizon.Plugin.UYA
             }
 
             // Create a command to select all rows from the table
-            var command = new SQLiteCommand("SELECT username, password, ladderstatswide FROM users", Sql_con);
+            var command = new SqliteCommand("SELECT username, password, ladderstatswide FROM users", Sql_con);
             
             // Execute the command and create a data reader
             using (var reader = command.ExecuteReader())
@@ -106,7 +106,7 @@ namespace Horizon.Plugin.UYA
         }
 
         public void QueryDb() {
-            SQLiteCommand sql_cmd = Sql_con.CreateCommand(); 
+            SqliteCommand sql_cmd = Sql_con.CreateCommand(); 
             string myQuery = "select username from users where account_id = 3;"; 
             sql_cmd.CommandText = myQuery;            
             string rw_maxid = (string)sql_cmd.ExecuteScalar();
@@ -121,7 +121,7 @@ namespace Horizon.Plugin.UYA
             Host.DebugLog("Querying Robo DB to check if username exists: " + username);
             string sql = "select username from users where lower(username) = @username;"; 
 
-            using (var command = new SQLiteCommand(sql, Sql_con))
+            using (var command = new SqliteCommand(sql, Sql_con))
             {
                 command.Parameters.AddWithValue("@username", username.ToLower());
 
@@ -136,7 +136,7 @@ namespace Horizon.Plugin.UYA
             Host.DebugLog("Querying Robo DB password for username: " + username);
             string sql = "select password from users where lower(username) = @username;"; 
 
-            using (var command = new SQLiteCommand(sql, Sql_con))
+            using (var command = new SqliteCommand(sql, Sql_con))
             {
                 command.Parameters.AddWithValue("@username", username.ToLower());
 

@@ -11,9 +11,6 @@ using Server.Common;
 using System.Text.Json;
 using Server.Database.Models;
 using Server.Medius.Models;
-using System.Data.SQLite;
-using BCrypt.Net;
-using System.Collections.Generic;
 
 namespace Horizon.Plugin.UYA
 {
