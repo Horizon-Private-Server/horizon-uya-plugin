@@ -1,5 +1,5 @@
 # Build stage =========================================================================
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as builder
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS builder
 
 COPY . /src
 
@@ -22,7 +22,7 @@ RUN cp /server/*.dll /src/Horizon.Plugin.UYA.Dme/
 WORKDIR /src/Horizon.Plugin.UYA
 RUN dotnet publish -c Release -o /out/medius
 
-RUN mv /out/medius/runtimes/linux-x64/native/SQLite.Interop.dll /out/medius/
+RUN mv /out/medius/runtimes/linux-x64/native/libe_sqlite3.so /out/medius/
 RUN rm -rf /out/medius/runtimes/osx-x64  
 RUN rm -rf /out/medius/runtimes/win-x64  
 RUN rm -rf /out/medius/runtimes/unix 
