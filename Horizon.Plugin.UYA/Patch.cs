@@ -75,8 +75,8 @@ namespace Horizon.Plugin.UYA
                 UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10683.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000d0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
-                    (0x000c8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
+                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
+                    (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
             // NTSC
@@ -88,8 +88,8 @@ namespace Horizon.Plugin.UYA
                 UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000d0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
-                    (0x000c8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
+                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
+                    (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
         };
