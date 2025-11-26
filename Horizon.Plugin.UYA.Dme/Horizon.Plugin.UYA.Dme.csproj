@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
 	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="DotNetty.Common" Version="0.7.1" />
+	  <PackageReference Include="DotNetty.Common" Version="0.7.6" />
     <PackageReference Include="vtortola.WebSocketListener" Version="3.0.0" />
   </ItemGroup>
 
@@ -20,7 +20,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Dme">
-      <HintPath>..\..\horizon-server\Server.Dme\bin\Debug\netcoreapp3.1\Server.Dme.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Dme\bin\Debug\net9.0\Server.Dme.dll</HintPath>
       <Private>false</Private>
     </Reference>
 	  <Reference Include="Server.Pipeline">
@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Dme\bin\Debug\netcoreapp3.1\Plugins\uya&quot;" />
+    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Dme\bin\Debug\net9.0\Plugins\uya&quot;" />
   </Target>
 
 </Project>
