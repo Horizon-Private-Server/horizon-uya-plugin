@@ -1,5 +1,5 @@
 # Build stage =========================================================================
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as builder
+FROM mcr.microsoft.com/dotnet/sdk:9.0 as builder
 
 COPY . /src
 

@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
 	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="DotNetty.Common" Version="0.7.1" />
+	  <PackageReference Include="DotNetty.Common" Version="0.7.6" />
 	  <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
     <PackageReference Include="vtortola.WebSocketListener" Version="3.0.0" />
@@ -33,7 +33,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Medius">
-      <HintPath>..\..\horizon-server\Server.Medius\bin\Debug\netcoreapp3.1\Server.Medius.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Medius\bin\Debug\net9.0\Server.Medius.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Plugins.Interface">
@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Medius\bin\Debug\netcoreapp3.1\Plugins\uya&quot;" />
+    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Medius\bin\Debug\net9.0\Plugins\uya&quot;" />
   </Target>
 
 </Project>

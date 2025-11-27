@@ -2,8 +2,8 @@
   "profiles": {
     "Horizon.Plugin.UYA.Dme": {
       "commandName": "Executable",
-      "executablePath": "M:\\horizon\\github\\horizon-server\\Server.Dme\\bin\\Debug\\netcoreapp3.1\\Server.Dme.exe",
-      "workingDirectory": "M:\\horizon\\github\\horizon-server\\Server.Dme\\bin\\Debug\\netcoreapp3.1\\"
+      "executablePath": "M:\\horizon\\github\\horizon-server\\Server.Dme\\bin\\Debug\\net9.0\\Server.Dme.exe",
+      "workingDirectory": "M:\\horizon\\github\\horizon-server\\Server.Dme\\bin\\Debug\\net9.0\\"
     }
   }
 }
