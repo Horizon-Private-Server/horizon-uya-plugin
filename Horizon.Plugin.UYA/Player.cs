@@ -224,7 +224,7 @@ namespace Horizon.Plugin.UYA
             disableDpadMovement = reader.ReadBoolean();
             hideFluxReticle = reader.ReadBoolean();
             dlStyleFlips = reader.ReadBoolean();
-            enableTeamInfo = reader.ReadBoolean(;)
+            enableTeamInfo = reader.ReadBoolean();
         }
     }
 }
