@@ -166,10 +166,11 @@ namespace Horizon.Plugin.UYA
         public bool disableDpadMovement { get; set; }
         public bool hideFluxReticle { get; set; }
         public bool dlStyleFlips { get; set; }
+        public bool enableTeamInfo { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[20];
+            byte[] output = new byte[21];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -194,6 +195,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(disableDpadMovement);
                     writer.Write(hideFluxReticle);
                     writer.Write(dlStyleFlips);
+                    writer.Write(enableTeamInfo);
                 }
             }
 
@@ -222,6 +224,7 @@ namespace Horizon.Plugin.UYA
             disableDpadMovement = reader.ReadBoolean();
             hideFluxReticle = reader.ReadBoolean();
             dlStyleFlips = reader.ReadBoolean();
+            enableTeamInfo = reader.ReadBoolean(;)
         }
     }
 }
