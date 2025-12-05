@@ -13,7 +13,8 @@ namespace Horizon.Plugin.UYA
             new SpleefCustomMode(),
             new InfectedCustomMode(),
             new JuggernaughtCustomMode(),
-            new MidFlagCustomMode()
+            new MidFlagCustomMode(),
+            new DominationCustomMode()
         };
 
         public static BaseCustomMode FindCustomModeById(CustomModeId id)
@@ -29,6 +30,7 @@ namespace Horizon.Plugin.UYA
         CMODE_ID_MIDFLAG = 1,
         CMODE_ID_INFECTED = 2,
         CMODE_ID_JUGGERNAUGHT = 3,
+        CMODE_ID_DOMINATION = 4,
 
         // reserved for custom maps
         CMODE_ID_SPLEEF = -1,
