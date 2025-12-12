@@ -72,11 +72,11 @@ namespace Horizon.Plugin.UYA
                 AppId = 10683,
                 HookAddress = 0x00139E94, 
                 HookType = PatchSetup.PatchHookType.JUMP,
-                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10683.bin")),
+                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10683.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
-                    (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
+                    (Regions.PATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10683.bin")),
+                    (Regions.EXCEPTION_HANDLER, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
             // NTSC
@@ -85,11 +85,11 @@ namespace Horizon.Plugin.UYA
                 AppId = 10684,
                 HookAddress = 0x00139E94,
                 HookType = PatchSetup.PatchHookType.JUMP,
-                UnpatchPayload = (0x000CE000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
+                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000e0000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
-                    (0x000C8000, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
+                    (Regions.PATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/patch-10684.bin")),
+                    (Regions.EXCEPTION_HANDLER, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
         };
@@ -104,7 +104,7 @@ namespace Horizon.Plugin.UYA
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
             {
-                Address = 0x000e0000 - 0x20,
+                Address = Regions.PATCH_HASH,
                 Length = 0x20,
                 QueryType = RT.Common.CheatQueryType.DME_SERVER_CHEAT_QUERY_RAW_MEMORY,
                 SequenceId = 101
@@ -207,9 +207,9 @@ namespace Horizon.Plugin.UYA
                 payloads = payloads.Union(new Payload[]
                 {
                     // patch config
-                    new Payload(0x000e0000 + 0x08, (await Player.GetPatchConfig(client)).Serialize()),
+                    new Payload(Regions.PATCH_CONFIG, (await Player.GetPatchConfig(client)).Serialize()),
                     // hash
-                    new Payload(0x000e0000 - 0x20, hash),
+                    new Payload(Regions.PATCH_HASH, hash),
                 });
 
                 // update saved player hash

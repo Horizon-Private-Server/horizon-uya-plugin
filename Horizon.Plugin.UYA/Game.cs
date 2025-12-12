@@ -204,7 +204,7 @@ namespace Horizon.Plugin.UYA
                         payloads.Add(modePayload);
 
                         // add mode module entry
-                        payloads.Add(new Payload(0x000CF000, new PatchModuleEntry()
+                        payloads.Add(new Payload(Regions.MODULE_DEFINITIONS, new PatchModuleEntry()
                         {
                             Type = PatchModuleEntryType.RUN_ONCE_GAME,
                             GameEntrypoint = modePayload.Address,
