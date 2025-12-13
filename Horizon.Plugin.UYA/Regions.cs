@@ -20,7 +20,7 @@ namespace Horizon.Plugin.UYA
         public const uint CUSTOM_GAME_MODE = 0x000f0000;
 
         // changes if PATCH changes
-        public const uint PATCH_HASH = PATCH - 0x20;
+        public const uint PATCH_HASH = PATCH - 0x30;
         public const uint PATCH_CONFIG = PATCH + 0x8;
 
     }
