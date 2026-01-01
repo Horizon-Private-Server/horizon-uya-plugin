@@ -599,6 +599,8 @@ namespace Horizon.Plugin.UYA
         public bool grSiegeNoTies { get; set; }
         public byte grKothScoreLimit { get; set; }
         public byte grKothHillDuration { get; set; }
+        public byte grKothRespawnOutside { get; set; }
+        public byte grKothRespawnInside { get; set; }
         public int grSeed { get; set; }
         public bool grNewPlayerSync { get; set; }
         public bool prSurvivor { get; set; }
@@ -609,7 +611,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[44];
+            byte[] output = new byte[46];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -648,6 +650,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grSiegeNoTies);
                     writer.Write(grKothScoreLimit);
                     writer.Write(grKothHillDuration);
+                    writer.Write(grKothRespawnOutside);
+                    writer.Write(grKothRespawnInside);
                     writer.Write(grSeed);
                     writer.Write(grNewPlayerSync);
                     writer.Write(prSurvivor);
@@ -697,6 +701,8 @@ namespace Horizon.Plugin.UYA
             grSiegeNoTies = reader.ReadBoolean();
             grKothScoreLimit = reader.ReadByte();
             grKothHillDuration = reader.ReadByte();
+            grKothRespawnOutside = reader.ReadByte();
+            grKothRespawnInside = reader.ReadByte();
             grSeed = reader.ReadInt32();
             grNewPlayerSync = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
@@ -742,6 +748,8 @@ namespace Horizon.Plugin.UYA
                 && grSiegeNoTies == other.grSiegeNoTies
                 && grKothScoreLimit == other.grKothScoreLimit
                 && grKothHillDuration == other.grKothHillDuration
+                && grKothRespawnOutside == other.grKothRespawnOutside
+                && grKothRespawnInside == other.grKothRespawnInside
                 && grSeed == other.grSeed
                 && grNewPlayerSync == other.grNewPlayerSync
                 && prSurvivor == other.prSurvivor
