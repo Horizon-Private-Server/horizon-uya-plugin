@@ -20,7 +20,7 @@ namespace Horizon.Plugin.UYA.CustomModes
         {
             var dataPath = Path.Combine(Plugin.WorkingDirectory, $"bin/patch/koth-{client.ApplicationId}.bin");
             if (File.Exists(dataPath))
-                return Task.FromResult(new Payload(0x000fa000, File.ReadAllBytes(dataPath)));
+                return Task.FromResult(new Payload(Regions.CUSTOM_GAME_MODE, File.ReadAllBytes(dataPath)));
 
             // binary not found for game mode
             return Task.FromResult<Payload>(null);
