@@ -597,6 +597,13 @@ namespace Horizon.Plugin.UYA
         public byte grAllNodesTimer { get; set; }
         public byte grNodeSelectTimer { get; set; }
         public bool grSiegeNoTies { get; set; }
+        public byte grKothScoreLimit { get; set; }
+        public byte grKothHillDuration { get; set; }
+        public byte grKothRespawnOutside { get; set; }
+        public byte grKothRespawnInside { get; set; }
+        public byte grKothHillSizeIdx { get; set; }
+        public bool grKothContestedStopsScore { get; set; }
+        public int grSeed { get; set; }
         public bool grNewPlayerSync { get; set; }
         public bool prSurvivor { get; set; }
         public bool prChargebootForever { get; set; }
@@ -606,7 +613,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[38];
+            byte[] output = new byte[48];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -643,6 +650,13 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grAllNodesTimer);
                     writer.Write(grNodeSelectTimer);
                     writer.Write(grSiegeNoTies);
+                    writer.Write(grKothScoreLimit);
+                    writer.Write(grKothHillDuration);
+                    writer.Write(grKothRespawnOutside);
+                    writer.Write(grKothRespawnInside);
+                    writer.Write(grKothHillSizeIdx);
+                    writer.Write(grKothContestedStopsScore);
+                    writer.Write(grSeed);
                     writer.Write(grNewPlayerSync);
                     writer.Write(prSurvivor);
                     writer.Write(prChargebootForever);
@@ -689,6 +703,13 @@ namespace Horizon.Plugin.UYA
             grAllNodesTimer = reader.ReadByte();
             grNodeSelectTimer = reader.ReadByte();
             grSiegeNoTies = reader.ReadBoolean();
+            grKothScoreLimit = reader.ReadByte();
+            grKothHillDuration = reader.ReadByte();
+            grKothRespawnOutside = reader.ReadByte();
+            grKothRespawnInside = reader.ReadByte();
+            grKothHillSizeIdx = reader.ReadByte();
+            grKothContestedStopsScore = reader.ReadBoolean();
+            grSeed = reader.ReadInt32();
             grNewPlayerSync = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
             prChargebootForever = reader.ReadBoolean();
@@ -731,6 +752,13 @@ namespace Horizon.Plugin.UYA
                 && grAllNodesTimer == other.grAllNodesTimer
                 && grNodeSelectTimer == other.grNodeSelectTimer
                 && grSiegeNoTies == other.grSiegeNoTies
+                && grKothScoreLimit == other.grKothScoreLimit
+                && grKothHillDuration == other.grKothHillDuration
+                && grKothRespawnOutside == other.grKothRespawnOutside
+                && grKothRespawnInside == other.grKothRespawnInside
+                && grKothHillSizeIdx == other.grKothHillSizeIdx
+                && grKothContestedStopsScore == other.grKothContestedStopsScore
+                && grSeed == other.grSeed
                 && grNewPlayerSync == other.grNewPlayerSync
                 && prSurvivor == other.prSurvivor
                 && prChargebootForever == other.prChargebootForever
