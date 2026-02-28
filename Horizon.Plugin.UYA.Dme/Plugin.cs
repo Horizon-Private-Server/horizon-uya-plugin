@@ -53,11 +53,17 @@ namespace Horizon.Plugin.UYA.Dme
             if (eventId == PluginEvent.DME_GAME_ON_RECV_UDP)
             {
                 var msg = (Server.Dme.PluginArgs.OnUdpMsg)data;
+                if (msg.Ignore || !msg.IsIncoming || msg.Player == null || msg.Packet?.Message == null)
+                    return Task.CompletedTask;
+
                 DmeRelay.ParsePacket("udp", msg.Player, msg.Packet.Message);
             }
             else if (eventId == PluginEvent.DME_GAME_ON_RECV_TCP)
             {
                 var msg = (Server.Dme.PluginArgs.OnTcpMsg)data;
+                if (msg.Ignore || !msg.IsIncoming || msg.Player == null || msg.Packet == null)
+                    return Task.CompletedTask;
+
                 DmeRelay.ParsePacket("tcp", msg.Player, msg.Packet);
             }
 
