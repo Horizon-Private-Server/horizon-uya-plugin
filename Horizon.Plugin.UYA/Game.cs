@@ -603,6 +603,7 @@ namespace Horizon.Plugin.UYA
         public byte grKothRespawnInside { get; set; }
         public byte grKothHillSizeIdx { get; set; }
         public bool grKothContestedStopsScore { get; set; }
+        public bool grKothPointStacking { get; set; }
         public int grSeed { get; set; }
         public bool grNewPlayerSync { get; set; }
         public bool prSurvivor { get; set; }
@@ -613,7 +614,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[48];
+            byte[] output = new byte[49];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -656,6 +657,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grKothRespawnInside);
                     writer.Write(grKothHillSizeIdx);
                     writer.Write(grKothContestedStopsScore);
+                    writer.Write(grKothPointStacking);
                     writer.Write(grSeed);
                     writer.Write(grNewPlayerSync);
                     writer.Write(prSurvivor);
@@ -709,6 +711,7 @@ namespace Horizon.Plugin.UYA
             grKothRespawnInside = reader.ReadByte();
             grKothHillSizeIdx = reader.ReadByte();
             grKothContestedStopsScore = reader.ReadBoolean();
+            grKothPointStacking = reader.ReadBoolean();
             grSeed = reader.ReadInt32();
             grNewPlayerSync = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
@@ -758,6 +761,7 @@ namespace Horizon.Plugin.UYA
                 && grKothRespawnInside == other.grKothRespawnInside
                 && grKothHillSizeIdx == other.grKothHillSizeIdx
                 && grKothContestedStopsScore == other.grKothContestedStopsScore
+                && grKothPointStacking == other.grKothPointStacking
                 && grSeed == other.grSeed
                 && grNewPlayerSync == other.grNewPlayerSync
                 && prSurvivor == other.prSurvivor
