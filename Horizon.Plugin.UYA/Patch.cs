@@ -13,7 +13,9 @@ namespace Horizon.Plugin.UYA
 {
     public static class Patch
     {
-        class PatchSetup
+        private static readonly uint PATCH_HASH_ADDRESS = Regions.PATCH_HASH;
+
+        public class PatchSetup
         {
             public enum PatchHookType
             {
@@ -64,7 +66,7 @@ namespace Horizon.Plugin.UYA
             }
         }
 
-        static readonly PatchSetup[] PatchSetups = new PatchSetup[]
+        public static readonly PatchSetup[] PatchSetups = new PatchSetup[]
         {
             // PAL
             new PatchSetup()
@@ -115,7 +117,7 @@ namespace Horizon.Plugin.UYA
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
             {
-                Address = Regions.PATCH_HASH,
+                Address = PATCH_HASH_ADDRESS,
                 Length = 0x20,
                 QueryType = RT.Common.CheatQueryType.DME_SERVER_CHEAT_QUERY_RAW_MEMORY,
                 SequenceId = 101
@@ -168,7 +170,7 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        private static async Task Apply(ClientObject client, PatchSetup setup)
+        public static async Task Apply(ClientObject client, PatchSetup setup)
         {
             try
             {
@@ -220,7 +222,7 @@ namespace Horizon.Plugin.UYA
                     // patch config
                     new Payload(Regions.PATCH_CONFIG, (await Player.GetPatchConfig(client)).Serialize()),
                     // hash
-                    new Payload(Regions.PATCH_HASH, hash),
+                    new Payload(PATCH_HASH_ADDRESS, hash),
                 });
 
                 // update saved player hash
