@@ -92,6 +92,17 @@ namespace Horizon.Plugin.UYA
                     (Regions.EXCEPTION_HANDLER, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
+            new PatchSetup()
+            {
+                AppId = -1,
+                HookAddress = 0x00139E94,
+                HookType = PatchSetup.PatchHookType.JUMP,
+                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
+                Payloads = new (uint, string)[]
+                {
+                    (0x000fc000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/elfloader-10684.bin")),
+                }
+            },
         };
 
         public static Task QueryForPatch(ClientObject client)

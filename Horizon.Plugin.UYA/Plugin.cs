@@ -958,6 +958,45 @@ namespace Horizon.Plugin.UYA
 
                                 break;
                             }
+                        case 30: // request boot elf
+                            {
+                                var request = new BootElfRequestMessage();
+                                request.Deserialize(reader);
+                                
+                                switch (request.BootElfId)
+                                {
+                                    case 0: // elf loader
+                                        {
+                                            var elfloaderPatch = Patch.PatchSetups.FirstOrDefault(x => x.AppId == -1);
+                                            _ = Patch.Apply(msg.Player, elfloaderPatch).ContinueWith(async (_) =>
+                                            {
+                                                await Task.Delay(1000);
+
+                                                var bytes = File.ReadAllBytes("M:\\PS2\\dl-mapdownloader\\bin\\mapdownloader.packed.elf");
+                                                var payload = new Payload(0x00085000, bytes);
+                                                await Downloader.InitiateDataDownload(client: msg.Player, 401, new Payload[] { payload }, (client, id) =>
+                                                {
+                                                    client.Queue(new BootElfResponseMessage()
+                                                    {
+                                                        BootElfId = request.BootElfId,
+                                                        Address = payload.Address,
+                                                        Size = (uint)payload.Data.Length
+                                                    });
+
+                                                    return Task.CompletedTask;
+                                                });
+                                            });
+                                            break;
+                                        }
+                                    // case 1: // map downloader
+                                    //     {
+                                    //         var mapdownloaderPatch = Patch.PatchSetups.FirstOrDefault(x => x.AppId == -2);
+                                    //         _ = Patch.Apply(msg.Player, mapdownloaderPatch);
+                                    //         break;
+                                    //     }
+                                }
+                                break;
+                            }
                         default:
                             {
                                 Host.Log(InternalLogLevel.WARN, $"Unhandled custom msg id {customMsgId}: {msg}");
