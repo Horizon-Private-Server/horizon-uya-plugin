@@ -586,7 +586,7 @@ namespace Horizon.Plugin.UYA
         public bool grDisableDrones { get; set; }
         public bool grDisablePlayerTurret { get; set; }
         public bool grNoBaseDefense_Bots { get; set; }
-        public bool grNoBaseDefense_SmallTurrets { get; set; }
+        public byte grNoBaseDefense_SmallTurrets { get; set; }
         public bool grBaseHealthPadActive { get; set; }
         public byte grVampire { get; set; }
         public bool grFluxShotsAlwaysHit { get; set; }
@@ -694,7 +694,7 @@ namespace Horizon.Plugin.UYA
             grDisableDrones = reader.ReadBoolean();
             grDisablePlayerTurret = reader.ReadBoolean();
             grNoBaseDefense_Bots = reader.ReadBoolean();
-            grNoBaseDefense_SmallTurrets = reader.ReadBoolean();
+            grNoBaseDefense_SmallTurrets = reader.ReadByte();
             grBaseHealthPadActive = reader.ReadBoolean();
             grVampire = reader.ReadByte();
             grFluxShotsAlwaysHit = reader.ReadBoolean();
