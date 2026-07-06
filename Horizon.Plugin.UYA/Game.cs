@@ -192,6 +192,11 @@ namespace Horizon.Plugin.UYA
             // send payloads to all clients
             foreach (var gameClient in game.Clients)
             {
+
+
+
+
+
                 // construct payloads to send to client
                 var payloads = new List<Payload>();
 
