@@ -15,6 +15,7 @@ namespace Horizon.Plugin.UYA.Messages
 
         public byte Month { get; set; }
         public byte Day { get; set; }
+        public byte Hour { get; set; }
         public byte Minute { get; set; }
         public byte Second { get; set; }
 
@@ -24,6 +25,7 @@ namespace Horizon.Plugin.UYA.Messages
 
             Month = reader.ReadByte();
             Day = reader.ReadByte();
+            Hour = reader.ReadByte();
             Minute = reader.ReadByte();
             Second = reader.ReadByte();
         }
@@ -35,7 +37,8 @@ namespace Horizon.Plugin.UYA.Messages
             writer.Write(Month);
             writer.Write(Day);
             writer.Write(Hour);
-            writer.Write(Second;
+            writer.Write(Minute);
+            writer.Write(Second);
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Horizon.Plugin.UYA
     {
         public static string WorkingDirectory = null;
         public static IPluginHost Host = null;
+        private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/patch/mapdownloader.packed.elf");
         public static readonly int[] SupportedAppIds = {
             10683, // PAL
             10684, // NTSC
@@ -967,12 +968,21 @@ namespace Horizon.Plugin.UYA
                                 {
                                     case 0: // elf loader
                                         {
-                                            var elfloaderPatch = Patch.PatchSetups.FirstOrDefault(x => x.AppId == -1);
+                                            var elfloaderPatch = Patch.GetElfLoaderSetup(msg.Player);
+                                            if (elfloaderPatch == null)
+                                                break;
+
                                             _ = Patch.Apply(msg.Player, elfloaderPatch).ContinueWith(async (_) =>
                                             {
                                                 await Task.Delay(1000);
 
-                                                var bytes = File.ReadAllBytes("M:\\PS2\\dl-mapdownloader\\bin\\mapdownloader.packed.elf");
+                                                if (!File.Exists(MapDownloaderElfPath))
+                                                {
+                                                    Host.Log(InternalLogLevel.ERROR, $"Unable to boot map downloader. Missing {MapDownloaderElfPath}");
+                                                    return;
+                                                }
+
+                                                var bytes = File.ReadAllBytes(MapDownloaderElfPath);
                                                 var payload = new Payload(0x00085000, bytes);
                                                 await Downloader.InitiateDataDownload(client: msg.Player, 401, new Payload[] { payload }, (client, id) =>
                                                 {

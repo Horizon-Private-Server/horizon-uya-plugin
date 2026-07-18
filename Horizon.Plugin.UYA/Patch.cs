@@ -27,6 +27,7 @@ namespace Horizon.Plugin.UYA
             public (uint, string) UnpatchPayload { get; set; }
             public (uint, string)[] Payloads { get; set; }
             public uint HookAddress { get; set; }
+            public uint? ConfigAddress { get; set; } = Regions.PATCH_CONFIG;
             public PatchHookType HookType { get; set; }
 
             public uint GetHookValue(uint targetAddress)
@@ -94,18 +95,26 @@ namespace Horizon.Plugin.UYA
                     (Regions.EXCEPTION_HANDLER, Path.Combine(Plugin.WorkingDirectory,  "bin/exceptiondisplay.bin"))
                 }
             },
-            new PatchSetup()
+        };
+
+        public static PatchSetup GetElfLoaderSetup(ClientObject client)
+        {
+            if (client.ApplicationId != 10683 && client.ApplicationId != 10684)
+                return null;
+
+            return new PatchSetup()
             {
                 AppId = -1,
                 HookAddress = 0x00139E94,
                 HookType = PatchSetup.PatchHookType.JUMP,
-                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, "bin/patch/unpatch-10684.bin")),
+                ConfigAddress = null,
+                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, $"bin/patch/unpatch-{client.ApplicationId}.bin")),
                 Payloads = new (uint, string)[]
                 {
-                    (0x000fc000, Path.Combine(Plugin.WorkingDirectory, "bin/patch/elfloader-10684.bin")),
+                    (0x000fc000, Path.Combine(Plugin.WorkingDirectory, $"bin/patch/elfloader-{client.ApplicationId}.bin")),
                 }
-            },
-        };
+            };
+        }
 
         public static Task QueryForPatch(ClientObject client)
         {
@@ -217,13 +226,12 @@ namespace Horizon.Plugin.UYA
                 var hash = setup.ComputeHash(payloads.Select(x => x.Data));
 
                 // add extra payloads
-                payloads = payloads.Union(new Payload[]
-                {
-                    // patch config
-                    new Payload(Regions.PATCH_CONFIG, (await Player.GetPatchConfig(client)).Serialize()),
-                    // hash
-                    new Payload(PATCH_HASH_ADDRESS, hash),
-                });
+                var extraPayloads = new List<Payload>();
+                if (setup.ConfigAddress.HasValue)
+                    extraPayloads.Add(new Payload(setup.ConfigAddress.Value, (await Player.GetPatchConfig(client)).Serialize()));
+
+                extraPayloads.Add(new Payload(PATCH_HASH_ADDRESS, hash));
+                payloads = payloads.Union(extraPayloads);
 
                 // update saved player hash
                 playerInfo.PatchHash = hash;
