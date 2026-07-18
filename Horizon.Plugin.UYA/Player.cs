@@ -76,6 +76,8 @@ namespace Horizon.Plugin.UYA
             if (metadata.Config == null)
                 metadata.Config = new PlayerConfig();
 
+            client.Location = metadata.Config.preferredGameServer;
+
             return Task.FromResult(metadata.Config);
         }
 
@@ -83,6 +85,8 @@ namespace Horizon.Plugin.UYA
         {
             var metadata = GetPlayerMetadata(client);
             metadata.Config = config;
+
+            client.Location = config.preferredGameServer;
             client.Metadata = JsonConvert.SerializeObject(metadata);
 
             var result = await Server.Medius.Program.Database.PostAccountMetadata(client.AccountId, client.Metadata);
@@ -167,10 +171,11 @@ namespace Horizon.Plugin.UYA
         public bool hideFluxReticle { get; set; }
         public bool dlStyleFlips { get; set; }
         public bool enableTeamInfo { get; set; }
+        public byte preferredGameServer { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[21];
+            byte[] output = new byte[22];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -196,6 +201,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(hideFluxReticle);
                     writer.Write(dlStyleFlips);
                     writer.Write(enableTeamInfo);
+                    writer.Write(preferredGameServer);
                 }
             }
 
@@ -225,6 +231,7 @@ namespace Horizon.Plugin.UYA
             hideFluxReticle = reader.ReadBoolean();
             dlStyleFlips = reader.ReadBoolean();
             enableTeamInfo = reader.ReadBoolean();
+            preferredGameServer = reader.ReadByte();
         }
     }
 }
