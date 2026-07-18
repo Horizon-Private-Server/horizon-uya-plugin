@@ -29,7 +29,7 @@ namespace Horizon.Plugin.UYA
     {
         public static string WorkingDirectory = null;
         public static IPluginHost Host = null;
-        private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/patch/mapdownloader.packed.elf");
+        private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/mapdownloader.packed.elf");
         public static readonly int[] SupportedAppIds = {
             10683, // PAL
             10684, // NTSC
