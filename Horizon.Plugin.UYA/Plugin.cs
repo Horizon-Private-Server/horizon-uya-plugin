@@ -30,8 +30,8 @@ namespace Horizon.Plugin.UYA
         public static string WorkingDirectory = null;
         public static IPluginHost Host = null;
         private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/mapdownloader.packed.elf");
-        private const uint MapDownloaderElfAddress = 0x00040000;
-        private const int MapDownloaderElfMaxSize = 0x00030000;
+        private const uint MapDownloaderElfAddress = 0x01800000;
+        private const int MapDownloaderElfMaxSize = 0x00100000;
         public static readonly int[] SupportedAppIds = {
             10683, // PAL
             10684, // NTSC
