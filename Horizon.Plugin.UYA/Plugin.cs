@@ -30,6 +30,8 @@ namespace Horizon.Plugin.UYA
         public static string WorkingDirectory = null;
         public static IPluginHost Host = null;
         private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/mapdownloader.packed.elf");
+        private const uint MapDownloaderElfAddress = 0x00040000;
+        private const int MapDownloaderElfMaxSize = 0x00030000;
         public static readonly int[] SupportedAppIds = {
             10683, // PAL
             10684, // NTSC
@@ -983,7 +985,13 @@ namespace Horizon.Plugin.UYA
                                                 }
 
                                                 var bytes = File.ReadAllBytes(MapDownloaderElfPath);
-                                                var payload = new Payload(0x00085000, bytes);
+                                                if (bytes.Length > MapDownloaderElfMaxSize)
+                                                {
+                                                    Host.Log(InternalLogLevel.ERROR, $"Unable to boot map downloader. {MapDownloaderElfPath} is too large: {bytes.Length} > {MapDownloaderElfMaxSize}");
+                                                    return;
+                                                }
+
+                                                var payload = new Payload(MapDownloaderElfAddress, bytes);
                                                 await Downloader.InitiateDataDownload(client: msg.Player, 401, new Payload[] { payload }, (client, id) =>
                                                 {
                                                     client.Queue(new BootElfResponseMessage()
