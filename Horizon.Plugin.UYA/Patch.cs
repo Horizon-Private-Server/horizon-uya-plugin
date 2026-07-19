@@ -171,6 +171,7 @@ namespace Horizon.Plugin.UYA
                 else
                 {
                     playerInfo.SetPatchHandled(client.ApplicationId, true);
+                    _ = SendConfig(client, patch);
                 }
             }
 
@@ -267,6 +268,21 @@ namespace Horizon.Plugin.UYA
             }
         }
 
+        private static async Task SendConfig(ClientObject client, PatchSetup setup)
+        {
+            try
+            {
+                if (setup.ConfigAddress.HasValue)
+                {
+                    var configMsgs = RT_MSG_SERVER_MEMORY_POKE.FromPayload(setup.ConfigAddress.Value, (await Player.GetPatchConfig(client)).Serialize());
+                    client.Queue(configMsgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.ERROR, ex);
+            }
+        }
     }
 
 
