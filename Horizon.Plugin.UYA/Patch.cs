@@ -122,6 +122,9 @@ namespace Horizon.Plugin.UYA
             if (patch == null)
                 return Task.CompletedTask;
 
+            var playerInfo = Player.GetPlayerExtraInfo(client.AccountId);
+            playerInfo.SetPatchHandled(client.ApplicationId, false);
+
             var patchHash = patch.ComputeHash();
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
@@ -135,10 +138,11 @@ namespace Horizon.Plugin.UYA
             // setup task that will auto send patch if the client doesn't respond in a period of time
             Task.Delay(5000).ContinueWith(r =>
             {
-                var playerInfo = Player.GetPlayerExtraInfo(client.AccountId);
-                if (client.IsConnected && playerInfo != null)
+                var timeoutPlayerInfo = Player.GetPlayerExtraInfo(client.AccountId);
+                if (client.IsConnected && timeoutPlayerInfo != null && !timeoutPlayerInfo.IsPatchHandled(client.ApplicationId))
                 {
-                    if (playerInfo.PatchHash == null || !patchHash.SequenceEqual(playerInfo.PatchHash))
+                    var clientPatchHash = timeoutPlayerInfo.GetPatchHash(client.ApplicationId);
+                    if (clientPatchHash == null || !patchHash.SequenceEqual(clientPatchHash))
                     {
                         _ = Apply(client, patch);
                     }
@@ -156,12 +160,17 @@ namespace Horizon.Plugin.UYA
 
             var playerInfo = Player.GetPlayerExtraInfo(client.AccountId);
             var patchHash = patch.ComputeHash();
-            if (client.IsConnected && playerInfo != null)
+            if (client.IsConnected && playerInfo != null && !playerInfo.IsPatchHandled(client.ApplicationId))
             {
-                playerInfo.PatchHash = response.Data;
-                if (playerInfo.PatchHash == null || !patchHash.SequenceEqual(playerInfo.PatchHash))
+                playerInfo.SetPatchHash(client.ApplicationId, response.Data);
+                var clientPatchHash = playerInfo.GetPatchHash(client.ApplicationId);
+                if (clientPatchHash == null || !patchHash.SequenceEqual(clientPatchHash))
                 {
                     _ = Apply(client, patch);
+                }
+                else
+                {
+                    playerInfo.SetPatchHandled(client.ApplicationId, true);
                 }
             }
 
@@ -185,6 +194,9 @@ namespace Horizon.Plugin.UYA
             {
                 var hasHook = setup.HookType != PatchSetup.PatchHookType.NONE && setup.HookAddress > 0;
                 var playerInfo = Player.GetPlayerExtraInfo(client.AccountId);
+                var patchAppId = setup.AppId > 0 ? setup.AppId : client.ApplicationId;
+
+                playerInfo.SetPatchHandled(patchAppId, true);
 
                 // reset hook first
                 if (hasHook && setup.HookType == PatchSetup.PatchHookType.JUMP)
@@ -234,7 +246,7 @@ namespace Horizon.Plugin.UYA
                 payloads = payloads.Union(extraPayloads);
 
                 // update saved player hash
-                playerInfo.PatchHash = hash;
+                playerInfo.SetPatchHash(patchAppId, hash);
 
                 // send payloads as data download
                 await Downloader.InitiateDataDownload(client, 101, payloads, (_client, _id) =>
