@@ -29,6 +29,9 @@ namespace Horizon.Plugin.UYA
     {
         public static string WorkingDirectory = null;
         public static IPluginHost Host = null;
+        private static string MapDownloaderElfPath => Path.Combine(WorkingDirectory, "bin/mapdownloader.packed.elf");
+        private const uint MapDownloaderElfAddress = 0x01800000;
+        private const int MapDownloaderElfMaxSize = 0x00100000;
         public static readonly int[] SupportedAppIds = {
             10683, // PAL
             10684, // NTSC
@@ -956,6 +959,60 @@ namespace Horizon.Plugin.UYA
                                 Bot b = new Bot(this);
                                 b.Trigger(accountNames, accountIds, request.Profile, request.BotMode, request.Difficulty, world_id);
 
+                                break;
+                            }
+                        case 30: // request boot elf
+                            {
+                                var request = new BootElfRequestMessage();
+                                request.Deserialize(reader);
+                                
+                                switch (request.BootElfId)
+                                {
+                                    case 0: // elf loader
+                                        {
+                                            var elfloaderPatch = Patch.GetElfLoaderSetup(msg.Player);
+                                            if (elfloaderPatch == null)
+                                                break;
+
+                                            _ = Patch.Apply(msg.Player, elfloaderPatch).ContinueWith(async (_) =>
+                                            {
+                                                await Task.Delay(1000);
+
+                                                if (!File.Exists(MapDownloaderElfPath))
+                                                {
+                                                    Host.Log(InternalLogLevel.ERROR, $"Unable to boot map downloader. Missing {MapDownloaderElfPath}");
+                                                    return;
+                                                }
+
+                                                var bytes = File.ReadAllBytes(MapDownloaderElfPath);
+                                                if (bytes.Length > MapDownloaderElfMaxSize)
+                                                {
+                                                    Host.Log(InternalLogLevel.ERROR, $"Unable to boot map downloader. {MapDownloaderElfPath} is too large: {bytes.Length} > {MapDownloaderElfMaxSize}");
+                                                    return;
+                                                }
+
+                                                var payload = new Payload(MapDownloaderElfAddress, bytes);
+                                                await Downloader.InitiateDataDownload(client: msg.Player, 401, new Payload[] { payload }, (client, id) =>
+                                                {
+                                                    client.Queue(new BootElfResponseMessage()
+                                                    {
+                                                        BootElfId = request.BootElfId,
+                                                        Address = payload.Address,
+                                                        Size = (uint)payload.Data.Length
+                                                    });
+
+                                                    return Task.CompletedTask;
+                                                });
+                                            });
+                                            break;
+                                        }
+                                    // case 1: // map downloader
+                                    //     {
+                                    //         var mapdownloaderPatch = Patch.PatchSetups.FirstOrDefault(x => x.AppId == -2);
+                                    //         _ = Patch.Apply(msg.Player, mapdownloaderPatch);
+                                    //         break;
+                                    //     }
+                                }
                                 break;
                             }
                         default:

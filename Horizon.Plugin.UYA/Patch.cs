@@ -13,7 +13,9 @@ namespace Horizon.Plugin.UYA
 {
     public static class Patch
     {
-        class PatchSetup
+        private static readonly uint PATCH_HASH_ADDRESS = Regions.PATCH_HASH;
+
+        public class PatchSetup
         {
             public enum PatchHookType
             {
@@ -25,6 +27,7 @@ namespace Horizon.Plugin.UYA
             public (uint, string) UnpatchPayload { get; set; }
             public (uint, string)[] Payloads { get; set; }
             public uint HookAddress { get; set; }
+            public uint? ConfigAddress { get; set; } = Regions.PATCH_CONFIG;
             public PatchHookType HookType { get; set; }
 
             public uint GetHookValue(uint targetAddress)
@@ -64,7 +67,7 @@ namespace Horizon.Plugin.UYA
             }
         }
 
-        static readonly PatchSetup[] PatchSetups = new PatchSetup[]
+        public static readonly PatchSetup[] PatchSetups = new PatchSetup[]
         {
             // PAL
             new PatchSetup()
@@ -94,6 +97,25 @@ namespace Horizon.Plugin.UYA
             },
         };
 
+        public static PatchSetup GetElfLoaderSetup(ClientObject client)
+        {
+            if (client.ApplicationId != 10683 && client.ApplicationId != 10684)
+                return null;
+
+            return new PatchSetup()
+            {
+                AppId = -1,
+                HookAddress = 0x00139E94,
+                HookType = PatchSetup.PatchHookType.JUMP,
+                ConfigAddress = null,
+                UnpatchPayload = (Regions.UNPATCH, Path.Combine(Plugin.WorkingDirectory, $"bin/patch/unpatch-{client.ApplicationId}.bin")),
+                Payloads = new (uint, string)[]
+                {
+                    (0x000fc000, Path.Combine(Plugin.WorkingDirectory, $"bin/patch/elfloader-{client.ApplicationId}.bin")),
+                }
+            };
+        }
+
         public static Task QueryForPatch(ClientObject client)
         {
             var patch = PatchSetups.FirstOrDefault(x => x.IsMatch(client));
@@ -104,7 +126,7 @@ namespace Horizon.Plugin.UYA
 
             client.Queue(new RT_MSG_SERVER_CHEAT_QUERY()
             {
-                Address = Regions.PATCH_HASH,
+                Address = PATCH_HASH_ADDRESS,
                 Length = 0x20,
                 QueryType = RT.Common.CheatQueryType.DME_SERVER_CHEAT_QUERY_RAW_MEMORY,
                 SequenceId = 101
@@ -157,7 +179,7 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        private static async Task Apply(ClientObject client, PatchSetup setup)
+        public static async Task Apply(ClientObject client, PatchSetup setup)
         {
             try
             {
@@ -204,13 +226,12 @@ namespace Horizon.Plugin.UYA
                 var hash = setup.ComputeHash(payloads.Select(x => x.Data));
 
                 // add extra payloads
-                payloads = payloads.Union(new Payload[]
-                {
-                    // patch config
-                    new Payload(Regions.PATCH_CONFIG, (await Player.GetPatchConfig(client)).Serialize()),
-                    // hash
-                    new Payload(Regions.PATCH_HASH, hash),
-                });
+                var extraPayloads = new List<Payload>();
+                if (setup.ConfigAddress.HasValue)
+                    extraPayloads.Add(new Payload(setup.ConfigAddress.Value, (await Player.GetPatchConfig(client)).Serialize()));
+
+                extraPayloads.Add(new Payload(PATCH_HASH_ADDRESS, hash));
+                payloads = payloads.Union(extraPayloads);
 
                 // update saved player hash
                 playerInfo.PatchHash = hash;
