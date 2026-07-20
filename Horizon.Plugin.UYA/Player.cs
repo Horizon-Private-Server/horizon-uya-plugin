@@ -94,6 +94,23 @@ namespace Horizon.Plugin.UYA
                 Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
         }
 
+
+        public static async Task SetClientType(ClientObject client, PlayerClientType clientType)
+        {
+            var metadata = GetPlayerMetadata(client);
+            metadata.LastLoginClientType = clientType;
+
+            if (metadata.LastLoginPerClientType == null)
+                metadata.LastLoginPerClientType = new Dictionary<PlayerClientType, DateTimeOffset?>();
+            metadata.LastLoginPerClientType[clientType] = DateTimeOffset.UtcNow;
+
+            client.Metadata = JsonConvert.SerializeObject(metadata);
+
+            var result = await Server.Medius.Program.Database.PostAccountMetadata(client.AccountId, client.Metadata);
+            if (!result)
+                Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
+        }
+
         public static async Task OnPickedUpHorizonBolt(ClientObject client)
         {
             var total = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_HBOLT_TOTAL_COUNT] += 1;
@@ -137,9 +154,19 @@ namespace Horizon.Plugin.UYA
         }
     }
 
+
+    public enum PlayerClientType
+    {
+        Normal = 0,
+        HZN = 1,
+        PCSX2 = 2
+    }
+
     public class PlayerMetadata
     {
         public PlayerConfig Config { get; set; } = new PlayerConfig();
+        public PlayerClientType? LastLoginClientType { get; set; } = null;
+        public Dictionary<PlayerClientType, DateTimeOffset?> LastLoginPerClientType { get; set; } = new Dictionary<PlayerClientType, DateTimeOffset?>();
     }
 
     public class PlayerExtraInfo

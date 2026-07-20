@@ -894,6 +894,30 @@ namespace Horizon.Plugin.UYA
 
                                 break;
                             }
+                        case 32: // set client type
+                            {
+                                var request = new SetClientTypeRequestMessage();
+                                request.Deserialize(reader);
+
+                                await Player.SetClientType(msg.Player, request.ClientType);
+
+                                if (request.MachineId != null && request.MachineId.Length == 6)
+                                {
+                                    string macAddr = BitConverter.ToString(request.MachineId);
+                                    await Program.Database.PostMachineId(msg.Player.AccountId, macAddr);
+
+                                    _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
+                                    {
+                                        if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
+                                        {
+                                            msg.Player.Logout();
+                                            msg.Player.ForceDisconnect();
+                                        }
+                                    });
+                                }
+
+                                break;
+                            }
                         case 16: // player picked up horizon bolt
                             {
                                 var request = new PlayerPickedUpHorizonBoltMessage();
