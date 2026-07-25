@@ -225,7 +225,7 @@ namespace Horizon.Plugin.UYA
                 if (response.Failures != null && response.Failures.Count > 0)
                 {
                     foreach (Failure failure in response.Failures)
-                        Host.DebugLog($"BOT TASK FAILED: {context} | arn={failure.Arn} | reason={failure.Reason} | detail={failure.Detail}");
+                        Host.DebugLog($"BOT TASK FAILED: {context} | arn={failure.Arn} | reason={failure.Reason}");
                 }
 
                 if (response.Tasks != null && response.Tasks.Count > 0)
