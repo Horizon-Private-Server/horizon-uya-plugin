@@ -19,6 +19,7 @@ using Amazon.ECS;
 using Amazon.ECS.Model;
 using Amazon.Runtime;
 using System.Linq;
+using ECSTask = Amazon.ECS.Model.Task;
 
 namespace Horizon.Plugin.UYA
 {
@@ -33,16 +34,52 @@ namespace Horizon.Plugin.UYA
 
         AmazonECSClient ecsClient = null;
 
+        // Names of every environment variable required to launch a bot task.
+        private static readonly string[] RequiredEnvVars = new string[] {
+            "BOT_ACCESS_KEY", "BOT_SECRET_KEY", "BOT_CLUSTER", "BOT_TASK", "BOT_SUBNET",
+            "BOT_SECURITYGROUP", "BOT_CONTAINER", "BOT_PASSWORD", "BOT_SERVER_IP",
+            "BOT_MAS_PORT", "BOT_MLS_PORT"
+        };
+
         public Bot(Plugin host)
         {
             Host = host;
 
             Host.DebugLog("Initializing bots!");
-            ecsClient = new AmazonECSClient(
-                new BasicAWSCredentials(Environment.GetEnvironmentVariable("BOT_ACCESS_KEY"), Environment.GetEnvironmentVariable("BOT_SECRET_KEY")),
-                Amazon.RegionEndpoint.USWest2
-            );
+
+            List<string> missing = RequiredEnvVars
+                .Where(name => string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(name)))
+                .ToList();
+
+            if (missing.Count > 0)
+                Host.DebugLog($"BOT CONFIG ERROR: missing/empty environment variables: {string.Join(", ", missing)}. Bot tasks will fail to launch.");
+            else
+                Host.DebugLog("BOT CONFIG: all required environment variables are set.");
+
+            try
+            {
+                ecsClient = new AmazonECSClient(
+                    new BasicAWSCredentials(Environment.GetEnvironmentVariable("BOT_ACCESS_KEY"), Environment.GetEnvironmentVariable("BOT_SECRET_KEY")),
+                    Amazon.RegionEndpoint.USWest2
+                );
+            }
+            catch (Exception ex)
+            {
+                Host.DebugLog($"BOT CONFIG ERROR: failed to create ECS client: {ex.GetType().Name}: {ex.Message}");
+            }
+
             populateProfileDifficulty();
+        }
+
+        // Reads an environment variable, logging when it is missing or empty.
+        private string GetEnvVar(string name, string context)
+        {
+            string value = Environment.GetEnvironmentVariable(name);
+
+            if (string.IsNullOrWhiteSpace(value))
+                Host.DebugLog($"BOT ENV MISSING: {name} is not set | {context}");
+
+            return value;
         }
 
         public List<int> getTrainingProfiles(int numProfiles, int world_id) {
@@ -128,17 +165,25 @@ namespace Horizon.Plugin.UYA
         public void TriggerSingle(string accountName, int accountId, int profile, string bot_mode, int world_id) {
             Host.DebugLog($"TRIGGER SINGLE: {accountName},{accountId},{profile},{bot_mode},{world_id}!");
 
+            string context = $"{accountName},{accountId},{profile},{bot_mode},{world_id}";
+
+            if (ecsClient == null)
+            {
+                Host.DebugLog($"BOT TASK ERROR: ECS client was never created, cannot launch task | {context}");
+                return;
+            }
+
             RunTaskRequest request = new RunTaskRequest
             {
-                Cluster = Environment.GetEnvironmentVariable("BOT_CLUSTER"),
-                TaskDefinition = Environment.GetEnvironmentVariable("BOT_TASK"),
+                Cluster = GetEnvVar("BOT_CLUSTER", context),
+                TaskDefinition = GetEnvVar("BOT_TASK", context),
                 LaunchType = LaunchType.FARGATE,
                 NetworkConfiguration = new NetworkConfiguration
                 {
                     AwsvpcConfiguration = new AwsVpcConfiguration
                     {
-                        Subnets = new List<string> { Environment.GetEnvironmentVariable("BOT_SUBNET") },
-                        SecurityGroups = new List<string> { Environment.GetEnvironmentVariable("BOT_SECURITYGROUP") },
+                        Subnets = new List<string> { GetEnvVar("BOT_SUBNET", context) },
+                        SecurityGroups = new List<string> { GetEnvVar("BOT_SECURITYGROUP", context) },
                         AssignPublicIp = AssignPublicIp.ENABLED
                     }
                 },
@@ -148,33 +193,55 @@ namespace Horizon.Plugin.UYA
                     {
                         new ContainerOverride
                         {
-                            Name = Environment.GetEnvironmentVariable("BOT_CONTAINER"),
+                            Name = GetEnvVar("BOT_CONTAINER", context),
                             Environment = new List<Amazon.ECS.Model.KeyValuePair>
                             {
                                 new Amazon.ECS.Model.KeyValuePair { Name = "BOT_MODE", Value = bot_mode },
                                 new Amazon.ECS.Model.KeyValuePair { Name = "ACCOUNT_ID", Value = accountId.ToString() },
                                 new Amazon.ECS.Model.KeyValuePair { Name = "PROFILE_ID", Value = profile.ToString() },
                                 new Amazon.ECS.Model.KeyValuePair { Name = "USERNAME", Value = accountName },
-                                new Amazon.ECS.Model.KeyValuePair { Name = "PASSWORD", Value = Environment.GetEnvironmentVariable("BOT_PASSWORD") },
+                                new Amazon.ECS.Model.KeyValuePair { Name = "PASSWORD", Value = GetEnvVar("BOT_PASSWORD", context) },
                                 new Amazon.ECS.Model.KeyValuePair { Name = "WORLD_ID", Value = world_id.ToString() },
-                                new Amazon.ECS.Model.KeyValuePair { Name = "MAS_IP", Value = Environment.GetEnvironmentVariable("BOT_SERVER_IP") },
-                                new Amazon.ECS.Model.KeyValuePair { Name = "MAS_PORT", Value = Environment.GetEnvironmentVariable("BOT_MAS_PORT") },
-                                new Amazon.ECS.Model.KeyValuePair { Name = "MLS_IP", Value = Environment.GetEnvironmentVariable("BOT_SERVER_IP") },
-                                new Amazon.ECS.Model.KeyValuePair { Name = "MLS_PORT", Value = Environment.GetEnvironmentVariable("BOT_MLS_PORT") }
+                                new Amazon.ECS.Model.KeyValuePair { Name = "MAS_IP", Value = GetEnvVar("BOT_SERVER_IP", context) },
+                                new Amazon.ECS.Model.KeyValuePair { Name = "MAS_PORT", Value = GetEnvVar("BOT_MAS_PORT", context) },
+                                new Amazon.ECS.Model.KeyValuePair { Name = "MLS_IP", Value = GetEnvVar("BOT_SERVER_IP", context) },
+                                new Amazon.ECS.Model.KeyValuePair { Name = "MLS_PORT", Value = GetEnvVar("BOT_MLS_PORT", context) }
                             }
                         }
                     }
                 }
             };
 
-            _ = ecsClient.RunTaskAsync(request);
+            _ = RunTaskLoggedAsync(request, context);
+        }
 
-            // System.Threading.Tasks.Task.Run(async () =>
-            // {
-            //     RunTaskResponse response = await ecsClient.RunTaskAsync(request);
+        private async System.Threading.Tasks.Task RunTaskLoggedAsync(RunTaskRequest request, string context)
+        {
+            try
+            {
+                RunTaskResponse response = await ecsClient.RunTaskAsync(request);
 
-            //     // Process the response or perform other operations
-            // }).GetAwaiter().GetResult();
+                // ECS can return HTTP 200 while still failing to place the task
+                if (response.Failures != null && response.Failures.Count > 0)
+                {
+                    foreach (Failure failure in response.Failures)
+                        Host.DebugLog($"BOT TASK FAILED: {context} | arn={failure.Arn} | reason={failure.Reason}");
+                }
+
+                if (response.Tasks != null && response.Tasks.Count > 0)
+                {
+                    foreach (ECSTask task in response.Tasks)
+                        Host.DebugLog($"BOT TASK STARTED: {context} | taskArn={task.TaskArn} | status={task.LastStatus}");
+                }
+                else if (response.Failures == null || response.Failures.Count == 0)
+                {
+                    Host.DebugLog($"BOT TASK FAILED: {context} | no tasks and no failures returned (http={response.HttpStatusCode})");
+                }
+            }
+            catch (Exception ex)
+            {
+                Host.DebugLog($"BOT TASK ERROR: {context} | {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         public void populateProfileDifficulty() {
