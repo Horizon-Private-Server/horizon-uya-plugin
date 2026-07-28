@@ -93,7 +93,7 @@ namespace Horizon.Plugin.UYA
             var metadata = await GetGameMetadata(game);
 
             // pass to gamemode
-            var mode = Modes.FindCustomModeById(GetCustomModeId(metadata));
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             if (mode != null)
             {
                 await mode.OnClientPostWideStats(args);
@@ -149,8 +149,8 @@ namespace Horizon.Plugin.UYA
             metadata.CustomMapConfig = mapConfig;
 
             // update other metadata
-            metadata.CustomMap = String.IsNullOrEmpty(metadata.CustomMapConfig.Name) ? null : metadata.CustomMapConfig.Name;
-            metadata.CustomGameMode = Modes.FindCustomModeById(GetCustomModeId(metadata))?.Name;
+            metadata.CustomMap = metadata.GetCustomMapName();
+            metadata.CustomGameMode = Modes.FindCustomModeById(metadata.GetRealCustomModeId())?.Name;
             metadata.GameInfo = await GetGameInfo(game, metadata);
 
             // send to database
@@ -175,6 +175,8 @@ namespace Horizon.Plugin.UYA
 
             metadata.CustomMapConfig ??= new GameCustomMapConfig();
             metadata.GameConfig ??= new GameConfig();
+            metadata.CustomMap = metadata.GetCustomMapName();
+            metadata.CustomGameMode = Modes.FindCustomModeById(metadata.GetRealCustomModeId())?.Name;
             metadata.GameState ??= new GameState();
             metadata.PreWideStats ??= new GameStats();
             metadata.PostWideStats ??= new GameStats();
@@ -195,7 +197,7 @@ namespace Horizon.Plugin.UYA
             await BroadcastMapOverride(game);
 
             // parse gamemode
-            var mode = Modes.FindCustomModeById(GetCustomModeId(metadata));
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
 
             // send payloads to all clients
             foreach (var gameClient in game.Clients)
@@ -260,7 +262,7 @@ namespace Horizon.Plugin.UYA
             Dictionary<int, int[]> playerCustomStats = null;
 
             // pass to gamemode
-            //var mode = Modes.FindCustomModeById(GetCustomModeId(metadata));
+            //var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             //if (mode != null)
             //    playerCustomStats = await mode.OnGameEnd(game, metadata);
 
@@ -301,7 +303,7 @@ namespace Horizon.Plugin.UYA
             string gameInfo = null;
 
             // let custom game mode override the gameinfo string
-            var mode = Modes.FindCustomModeById(GetCustomModeId(metadata));
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             if (mode != null)
             {
                 gameInfo = await mode.GetGameInfo(game, metadata);
@@ -362,13 +364,6 @@ namespace Horizon.Plugin.UYA
             return gameInfo?.Trim()?.Trim('\n');
         }
 
-        private static CustomModeId GetCustomModeId(GameMetadata metadata)
-        {
-            if (metadata?.CustomMapConfig?.HasMap() == true && metadata.CustomMapConfig.ForcedModeId != 0)
-                return (CustomModeId)metadata.CustomMapConfig.ForcedModeId;
-
-            return (CustomModeId)(metadata?.GameConfig?.GamemodeOverride ?? 0);
-        }
 
         private static async Task<bool> SetGameMetadata(Server.Medius.Models.Game game, GameMetadata metadata)
         {
@@ -403,6 +398,19 @@ namespace Horizon.Plugin.UYA
         public GameStats PostWideStats { get; set; } = new GameStats();
         public GameStats PreCustomWideStats { get; set; } = new GameStats();
         public GameStats PostCustomWideStats { get; set; } = new GameStats();
+
+        public string GetCustomMapName()
+        {
+            return String.IsNullOrEmpty(CustomMapConfig?.Name) ? null : CustomMapConfig.Name;
+        }
+
+        public CustomModeId GetRealCustomModeId()
+        {
+            if (CustomMapConfig?.HasMap() == true && CustomMapConfig.ForcedModeId != 0)
+                return (CustomModeId)CustomMapConfig.ForcedModeId;
+
+            return (CustomModeId)(GameConfig?.GamemodeOverride ?? 0);
+        }
     }
 
     public class GameStats

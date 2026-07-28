@@ -1,4 +1,4 @@
-﻿using DotNetty.Common.Internal.Logging;
+using DotNetty.Common.Internal.Logging;
 using Horizon.Plugin.UYA.Messages;
 using RT.Common;
 using RT.Models;
@@ -391,12 +391,19 @@ namespace Horizon.Plugin.UYA
         {
             var msg = (Server.Medius.PluginArgs.OnWorldReport0Args)data;
             MediusWorldReport0 report = (MediusWorldReport0)msg.Request;
+            var game = Program.Manager.GetGameByGameId(report.MediusWorldID);
+            if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
+                return Task.CompletedTask;
 
-            if (report.WorldStatus == MediusWorldStatus.WorldActive && !report.GameName.StartsWith("[IG] "))
+            var gameName = StripPackedGameName(report.GameName);
+
+            if (report.WorldStatus == MediusWorldStatus.WorldActive && !gameName.StartsWith("[IG] "))
             {
 
-                report.GameName = "[IG] " + report.GameName;
+                gameName = "[IG] " + gameName;
             }
+
+            report.GameName = ConstructGameNameWithModeAndMap(game, gameName);
             return Task.CompletedTask;
         }
 
@@ -895,6 +902,16 @@ namespace Horizon.Plugin.UYA
 
                                 break;
                             }
+                        case 25: // set game state
+                            {
+                                if (msg.Player.CurrentGame != null)
+                                {
+                                    var request = new SetGameStateRequestMessage();
+                                    request.Deserialize(reader);
+                                    await Game.SetGameState(msg.Player.CurrentGame, request.State);
+                                }
+                                break;
+                            }
                         case 32: // set client type
                             {
                                 var request = new SetClientTypeRequestMessage();
@@ -1124,27 +1141,46 @@ namespace Horizon.Plugin.UYA
 
         string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game)
         {
+            return ConstructGameNameWithModeAndMap(game, game.GameName);
+        }
+
+        string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game, string gameName)
+        {
             var metadata = Game.GetGameMetadata(game).Result;
-            if (metadata == null || metadata.GameConfig == null) return game.GameName;
+            if (metadata == null || metadata.GameConfig == null) return gameName;
+
+            var customModeId = (byte)metadata.GetRealCustomModeId();
+            var customMapName = metadata.GetCustomMapName();
+            if (customModeId == 0 && String.IsNullOrEmpty(customMapName))
+                return gameName;
 
             // add gamename
-            var name = game.GameName;
+            var name = StripPackedGameName(gameName);
             if (name.Length > 15)
                 name = name.Substring(0, 15);
             name += '\0';
 
-            // add mode
-            name += (char)((byte)metadata.GameConfig.GamemodeOverride >> 4);
-            name += (char)((byte)metadata.GameConfig.GamemodeOverride & 0xf);
+            // add effective mode
+            name += (char)(customModeId >> 4);
+            name += (char)(customModeId & 0xf);
 
             // add map name
-            name += metadata.CustomMap;
+            name += customMapName;
 
             // clamp
             if (name.Length > RT.Common.Constants.GAMENAME_MAXLEN)
                 name = name.Substring(0, RT.Common.Constants.GAMENAME_MAXLEN);
 
             return name;
+        }
+
+        string StripPackedGameName(string gameName)
+        {
+            if (String.IsNullOrEmpty(gameName))
+                return String.Empty;
+
+            var terminatorIndex = gameName.IndexOf('\0');
+            return terminatorIndex >= 0 ? gameName.Substring(0, terminatorIndex) : gameName;
         }
 
     }
