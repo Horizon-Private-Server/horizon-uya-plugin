@@ -18,6 +18,24 @@ namespace Horizon.Plugin.UYA
     {
         private static readonly Dictionary<int, GameMetadata> _metadatas = new Dictionary<int, GameMetadata>();
 
+        internal static int GetGenericField3GameMode(Server.Medius.Models.Game game)
+        {
+            var field = unchecked((uint)game.GenericField3);
+            var rules = (((field >> 8) & 0xff) << 16) | (((field >> 16) & 0xff) << 8) | ((field >> 24) & 0xff);
+            return (int)((rules >> 19) & 0x3);
+        }
+
+        internal static bool IsSiege(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 0;
+        internal static bool IsCtf(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 1;
+
+        private static int GetObjectiveLimit(Server.Medius.Models.Game game, GameMetadata metadata)
+        {
+            if (IsCtf(game) || GetGenericField3GameMode(game) == 2)
+                return game.GenericField1;
+
+            return 0;
+        }
+
         public static async Task BroadcastGameConfig(Server.Medius.Models.Game game)
         {
             var metadata = await GetGameMetadata(game);
@@ -312,11 +330,11 @@ namespace Horizon.Plugin.UYA
             // default game info
             if (String.IsNullOrEmpty(gameInfo))
             {
-                var scoreToWin = game.GenericField3;
+                var scoreToWin = GetObjectiveLimit(game, metadata);
                 var timelimit = (game.GenericField7 >> 27) & 7;
                 string objectiveLabel = null;
 
-                switch (game.RulesSet)
+                switch (GetGenericField3GameMode(game))
                 {
                     case 0: // siege
                         {
@@ -341,13 +359,13 @@ namespace Horizon.Plugin.UYA
 
                 gameInfo += $"\nTimelimit: {time}";
 
-                if (game.RulesSet == 0 && metadata.GameState?.Teams?.Count > 0)
+                if (IsSiege(game) && metadata.GameState?.Teams?.Count > 0)
                 {
                     foreach (var team in metadata.GameState.Teams.OrderBy(x => x.Id).Take(2))
-                        gameInfo += $"\n{team.Name} Base Health: {team.Score}";
+                        gameInfo += $"\n{team.Name} Base Health: {Math.Clamp(team.Score, 0, 100)}%";
                 }
 
-                if (game.RulesSet == 0 && metadata.GameState?.Nodes?.Length >= 2 && metadata.GameState.Nodes[0] >= 0 && metadata.GameState.Nodes[1] >= 0)
+                if (IsCtf(game) && metadata.GameState?.Nodes?.Length >= 2 && metadata.GameState.Nodes[0] >= 0 && metadata.GameState.Nodes[1] >= 0)
                     gameInfo += $"\nNodes: Blue {metadata.GameState.Nodes[0]} / Red {metadata.GameState.Nodes[1]}";
 
                 // objective
@@ -543,6 +561,28 @@ namespace Horizon.Plugin.UYA
                     else
                     {
                         team.Players.Add(name);
+                    }
+                }
+            }
+
+            if (Game.IsSiege(game))
+            {
+                for (int teamId = 0; teamId < 2; ++teamId)
+                {
+                    var score = packedGameState.TeamScores != null && teamId < packedGameState.TeamScores.Length ? packedGameState.TeamScores[teamId] : 100;
+                    var team = this.Teams.FirstOrDefault(x => x.Id == teamId);
+                    if (team == null)
+                    {
+                        this.Teams.Add(new GameStateTeam()
+                        {
+                            Id = teamId,
+                            Name = Constants.Teams.ElementAtOrDefault(teamId) ?? $"Team {teamId}",
+                            Score = score
+                        });
+                    }
+                    else
+                    {
+                        team.Score = score;
                     }
                 }
             }
