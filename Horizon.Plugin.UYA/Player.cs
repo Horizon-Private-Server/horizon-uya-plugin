@@ -172,10 +172,11 @@ namespace Horizon.Plugin.UYA
         public bool dlStyleFlips { get; set; }
         public bool enableTeamInfo { get; set; }
         public byte preferredGameServer { get; set; }
+        public byte controllerDeadzone { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[22];
+            byte[] output = new byte[23];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -202,6 +203,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(dlStyleFlips);
                     writer.Write(enableTeamInfo);
                     writer.Write(preferredGameServer);
+                    writer.Write(controllerDeadzone);
                 }
             }
 
@@ -232,6 +234,7 @@ namespace Horizon.Plugin.UYA
             dlStyleFlips = reader.ReadBoolean();
             enableTeamInfo = reader.ReadBoolean();
             preferredGameServer = reader.ReadByte();
+            controllerDeadzone = reader.ReadByte();
         }
     }
 }
