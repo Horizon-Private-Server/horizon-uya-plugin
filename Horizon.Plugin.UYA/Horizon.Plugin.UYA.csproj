@@ -1,49 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
 	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
 	  <PackageReference Include="DotNetty.Common" Version="0.7.6" />
-	  <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
     <PackageReference Include="vtortola.WebSocketListener" Version="3.0.0" />
     <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" /> 
-    <PackageReference Include="AWSSDK.ECS" Version="3.3.110.6" />
-    <PackageReference Include="AWSSDK.Core" Version="3.7.108.1" />
+    <PackageReference Include="AWSSDK.ECS" Version="4.0.106" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.102.8" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="RT.Common">
-      <HintPath>..\..\horizon-server\RT.Common\bin\Debug\netstandard2.0\RT.Common.dll</HintPath>
+      <HintPath>..\..\horizon-server\RT.Common\bin\Debug\net10.0\RT.Common.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="RT.Models">
-      <HintPath>..\..\horizon-server\RT.Models\bin\Debug\netstandard2.0\RT.Models.dll</HintPath>
+      <HintPath>..\..\horizon-server\RT.Models\bin\Debug\net10.0\RT.Models.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Common">
-      <HintPath>..\..\horizon-server\Server.Common\bin\Debug\netstandard2.0\Server.Common.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Common\bin\Debug\net10.0\Server.Common.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Database">
-      <HintPath>..\..\horizon-server\Server.Database\bin\Debug\netstandard2.0\Server.Database.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Database\bin\Debug\net10.0\Server.Database.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Medius">
-      <HintPath>..\..\horizon-server\Server.Medius\bin\Debug\net9.0\Server.Medius.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Medius\bin\Debug\net10.0\Server.Medius.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Server.Plugins.Interface">
-      <HintPath>..\..\horizon-server\Server.Plugins.Interface\bin\Debug\netstandard2.0\Server.Plugins.Interface.dll</HintPath>
+      <HintPath>..\..\horizon-server\Server.Plugins.Interface\bin\Debug\net10.0\Server.Plugins.Interface.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Medius\bin\Debug\net9.0\Plugins\uya&quot;" />
+    <Exec Command="xcopy /y $(OutDir) &quot;$(SolutionDir)..\horizon-server\Server.Medius\bin\Debug\net10.0\Plugins\uya&quot;" />
   </Target>
 
 </Project>
