@@ -1,5 +1,6 @@
 ﻿using Horizon.Plugin.UYA.Messages;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Server.Medius;
 using Server.Medius.Models;
 using System;
@@ -94,6 +95,25 @@ namespace Horizon.Plugin.UYA
                 Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
         }
 
+        public static async Task SetClientType(ClientObject client, PlayerClientType clientType)
+        {
+            // merge into the stored metadata instead of saving a PlayerMetadata
+            // so fields PlayerMetadata doesn't have (eg CpuGame) are kept
+            var currentMetadata = await Server.Medius.Program.Database.GetAccountMetadata(client.AccountId) ?? client.Metadata;
+
+            JObject metadata = null;
+            try { metadata = JObject.Parse(currentMetadata); } catch (Exception) { }
+            if (metadata == null)
+                metadata = new JObject();
+
+            metadata["LastLoginClientType"] = (int)clientType;
+            client.Metadata = JsonConvert.SerializeObject(metadata);
+
+            var result = await Server.Medius.Program.Database.PostAccountMetadata(client.AccountId, client.Metadata);
+            if (!result)
+                Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
+        }
+
         public static async Task OnPickedUpHorizonBolt(ClientObject client)
         {
             var total = client.CustomWideStats[(int)CustomPlayerStatIds.CUSTOM_STAT_HBOLT_TOTAL_COUNT] += 1;
@@ -137,9 +157,17 @@ namespace Horizon.Plugin.UYA
         }
     }
 
+    public enum PlayerClientType
+    {
+        Normal = 0,
+        DZO = 1,
+        PCSX2 = 2,
+    }
+
     public class PlayerMetadata
     {
         public PlayerConfig Config { get; set; } = new PlayerConfig();
+        public PlayerClientType? LastLoginClientType { get; set; } = null;
     }
 
     public class PlayerExtraInfo

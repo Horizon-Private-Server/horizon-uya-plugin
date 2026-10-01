@@ -613,6 +613,21 @@ namespace Horizon.Plugin.UYA
             }
        }
 
+    public async Task SetClientMachineId(ClientObject client, byte[] machineId) {
+        string macAddr = BitConverter.ToString(machineId);
+
+        await Program.Database.PostMachineId(client.AccountId, macAddr);
+
+        _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
+        {
+            if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
+            {
+                client.Logout();
+                client.ForceDisconnect();
+            }
+        });
+    }
+
     public async Task<string> GetAccountMetadataAsync(int accountId) {
         return await Server.Medius.Program.Database.GetAccountMetadata(accountId);
     }
@@ -874,24 +889,12 @@ namespace Horizon.Plugin.UYA
                                 await Patch.SendPatch(msg.Player);
                                 break;
                             }
-                        case 14: // set client machine id
+                        case 14: // set client machine id (older patches, newer ones send it with the client type)
                             {
                                 var request = new SetClientMachineIdRequest();
                                 request.Deserialize(reader);
 
-                                string macAddr = BitConverter.ToString(request.MachineId);
-
-                                await Program.Database.PostMachineId(msg.Player.AccountId, macAddr);
-
-                                _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
-                                {
-                                    if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
-                                    {
-                                        msg.Player.Logout();
-                                        msg.Player.ForceDisconnect();
-                                    }
-                                });
-
+                                await SetClientMachineId(msg.Player, request.MachineId);
                                 break;
                             }
                         case 16: // player picked up horizon bolt
@@ -1017,6 +1020,15 @@ namespace Horizon.Plugin.UYA
                                     //         break;
                                     //     }
                                 }
+                                break;
+                            }
+                        case 32: // set client type
+                            {
+                                var request = new SetClientTypeRequestMessage();
+                                request.Deserialize(reader);
+
+                                await SetClientMachineId(msg.Player, request.MachineId);
+                                await Player.SetClientType(msg.Player, request.ClientType);
                                 break;
                             }
                         default:
