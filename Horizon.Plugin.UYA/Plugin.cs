@@ -621,6 +621,21 @@ namespace Horizon.Plugin.UYA
             }
        }
 
+    public async Task SetClientMachineId(ClientObject client, byte[] machineId) {
+        string macAddr = BitConverter.ToString(machineId);
+
+        await Program.Database.PostMachineId(client.AccountId, macAddr);
+
+        _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
+        {
+            if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
+            {
+                client.Logout();
+                client.ForceDisconnect();
+            }
+        });
+    }
+
     public async Task<string> GetAccountMetadataAsync(int accountId) {
         return await Server.Medius.Program.Database.GetAccountMetadata(accountId);
     }
@@ -882,24 +897,12 @@ namespace Horizon.Plugin.UYA
                                 await Patch.SendPatch(msg.Player);
                                 break;
                             }
-                        case 14: // set client machine id
+                        case 14: // set client machine id (older patches, newer ones send it with the client type)
                             {
                                 var request = new SetClientMachineIdRequest();
                                 request.Deserialize(reader);
 
-                                string macAddr = BitConverter.ToString(request.MachineId);
-
-                                await Program.Database.PostMachineId(msg.Player.AccountId, macAddr);
-
-                                _ = Program.Database.GetIsMacBanned(macAddr).ContinueWith((t) =>
-                                {
-                                    if (t.IsCompletedSuccessfully && t.Result != null && t.Result == true)
-                                    {
-                                        msg.Player.Logout();
-                                        msg.Player.ForceDisconnect();
-                                    }
-                                });
-
+                                await SetClientMachineId(msg.Player, request.MachineId);
                                 break;
                             }
                         case 25: // set game state
@@ -996,7 +999,11 @@ namespace Horizon.Plugin.UYA
                                 List<string> accountNames = result.Item1;
                                 List<int> accountIds = result.Item2;
 
-                                int world_id = game.DMEWorldId+1;
+                                // The bot connects via MAS/MLS, which key off the Medius
+                                // WorldID (== game.Id, exposed as GameDTO.GameId). DMEWorldId
+                                // is a separate counter and has drifted out of sync, so
+                                // DMEWorldId+1 no longer maps to the real world id.
+                                int world_id = game.Id;
                                             
                                 Bot b = new Bot(this);
                                 b.Trigger(accountNames, accountIds, request.Profile, request.BotMode, request.Difficulty, world_id);
@@ -1055,6 +1062,15 @@ namespace Horizon.Plugin.UYA
                                     //         break;
                                     //     }
                                 }
+                                break;
+                            }
+                        case 32: // set client type
+                            {
+                                var request = new SetClientTypeRequestMessage();
+                                request.Deserialize(reader);
+
+                                await SetClientMachineId(msg.Player, request.MachineId);
+                                await Player.SetClientType(msg.Player, request.ClientType);
                                 break;
                             }
                         default:

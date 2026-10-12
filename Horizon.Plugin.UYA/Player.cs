@@ -1,5 +1,6 @@
 ﻿using Horizon.Plugin.UYA.Messages;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Server.Medius;
 using Server.Medius.Models;
 using System;
@@ -94,16 +95,18 @@ namespace Horizon.Plugin.UYA
                 Plugin.Host.Log(DotNetty.Common.Internal.Logging.InternalLogLevel.WARN, $"Unable to post player metadata to {client.AccountId}: {client.Metadata}");
         }
 
-
         public static async Task SetClientType(ClientObject client, PlayerClientType clientType)
         {
-            var metadata = GetPlayerMetadata(client);
-            metadata.LastLoginClientType = clientType;
+            // merge into the stored metadata instead of saving a PlayerMetadata
+            // so fields PlayerMetadata doesn't have (eg CpuGame) are kept
+            var currentMetadata = await Server.Medius.Program.Database.GetAccountMetadata(client.AccountId) ?? client.Metadata;
 
-            if (metadata.LastLoginPerClientType == null)
-                metadata.LastLoginPerClientType = new Dictionary<PlayerClientType, DateTimeOffset?>();
-            metadata.LastLoginPerClientType[clientType] = DateTimeOffset.UtcNow;
+            JObject metadata = null;
+            try { metadata = JObject.Parse(currentMetadata); } catch (Exception) { }
+            if (metadata == null)
+                metadata = new JObject();
 
+            metadata["LastLoginClientType"] = (int)clientType;
             client.Metadata = JsonConvert.SerializeObject(metadata);
 
             var result = await Server.Medius.Program.Database.PostAccountMetadata(client.AccountId, client.Metadata);
@@ -154,19 +157,17 @@ namespace Horizon.Plugin.UYA
         }
     }
 
-
     public enum PlayerClientType
     {
         Normal = 0,
-        HZN = 1,
-        PCSX2 = 2
+        DZO = 1,
+        PCSX2 = 2,
     }
 
     public class PlayerMetadata
     {
         public PlayerConfig Config { get; set; } = new PlayerConfig();
         public PlayerClientType? LastLoginClientType { get; set; } = null;
-        public Dictionary<PlayerClientType, DateTimeOffset?> LastLoginPerClientType { get; set; } = new Dictionary<PlayerClientType, DateTimeOffset?>();
     }
 
     public class PlayerExtraInfo
@@ -231,14 +232,11 @@ namespace Horizon.Plugin.UYA
         public bool dlStyleFlips { get; set; }
         public bool enableTeamInfo { get; set; }
         public byte preferredGameServer { get; set; }
-        public byte kothScrollSpeed { get; set; }
-        public byte kothHillTransparency { get; set; }
-        public byte kothHillFxId { get; set; }
-        public byte playerSyncRate { get; set; }
+        public byte controllerDeadzone { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[26];
+            byte[] output = new byte[23];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -265,10 +263,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(dlStyleFlips);
                     writer.Write(enableTeamInfo);
                     writer.Write(preferredGameServer);
-                    writer.Write(kothScrollSpeed);
-                    writer.Write(kothHillTransparency);
-                    writer.Write(kothHillFxId);
-                    writer.Write(playerSyncRate);
+                    writer.Write(controllerDeadzone);
                 }
             }
 
@@ -299,10 +294,7 @@ namespace Horizon.Plugin.UYA
             dlStyleFlips = reader.ReadBoolean();
             enableTeamInfo = reader.ReadBoolean();
             preferredGameServer = reader.ReadByte();
-            kothScrollSpeed = reader.ReadByte();
-            kothHillTransparency = reader.ReadByte();
-            kothHillFxId = reader.ReadByte();
-            playerSyncRate = reader.ReadByte();
+            controllerDeadzone = reader.ReadByte();
         }
     }
 }
