@@ -701,10 +701,11 @@ namespace Horizon.Plugin.UYA
         public bool prLoadoutWeaponsOnly { get; set; }
         public bool prGravityBombTweakers { get; set; }
         public bool prDisableDlStyleFlips { get; set; }
+		public bool allowMidGameJoining { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[49];
+            byte[] output = new byte[50];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -755,6 +756,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(prLoadoutWeaponsOnly);
                     writer.Write(prGravityBombTweakers);
                     writer.Write(prDisableDlStyleFlips);
+					writer.Write(allowMidGameJoining);
                 }
             }
 
@@ -809,6 +811,7 @@ namespace Horizon.Plugin.UYA
             prLoadoutWeaponsOnly = reader.ReadBoolean();
             prGravityBombTweakers = reader.ReadBoolean();
             prDisableDlStyleFlips = reader.ReadBoolean();
+			allowMidGameJoining = reader.ReadBoolean();
         }
 
         public bool SameAs(GameConfig other)
@@ -862,6 +865,7 @@ namespace Horizon.Plugin.UYA
                 && prLoadoutWeaponsOnly == other.prLoadoutWeaponsOnly
                 && prGravityBombTweakers == other.prGravityBombTweakers
                 && prDisableDlStyleFlips == other.prDisableDlStyleFlips
+				&& allowMidGameJoining == other.allowMidGameJoining
                 ;
         }
     }
