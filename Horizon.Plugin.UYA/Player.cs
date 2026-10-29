@@ -1,4 +1,4 @@
-﻿using Horizon.Plugin.UYA.Messages;
+using Horizon.Plugin.UYA.Messages;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Server.Medius;
@@ -160,7 +160,7 @@ namespace Horizon.Plugin.UYA
     public enum PlayerClientType
     {
         Normal = 0,
-        DZO = 1,
+        HRZ = 1,
         PCSX2 = 2,
     }
 
@@ -172,8 +172,40 @@ namespace Horizon.Plugin.UYA
 
     public class PlayerExtraInfo
     {
+        private Dictionary<int, byte[]> _patchHashesByAppId = new Dictionary<int, byte[]>();
+        private HashSet<int> _patchHandledAppIds = new HashSet<int>();
+
         public int CurrentMapVersion { get; set; }
-        public byte[] PatchHash { get; set; }
+
+        public byte[] PatchHash
+        {
+            get => GetPatchHash(0);
+            set => SetPatchHash(0, value);
+        }
+
+        public byte[] GetPatchHash(int appId)
+        {
+            _patchHashesByAppId.TryGetValue(appId, out var hash);
+            return hash;
+        }
+
+        public void SetPatchHash(int appId, byte[] hash)
+        {
+            _patchHashesByAppId[appId] = hash;
+        }
+
+        public bool IsPatchHandled(int appId)
+        {
+            return _patchHandledAppIds.Contains(appId);
+        }
+
+        public void SetPatchHandled(int appId, bool handled)
+        {
+            if (handled)
+                _patchHandledAppIds.Add(appId);
+            else
+                _patchHandledAppIds.Remove(appId);
+        }
     }
 
     public class PlayerConfig

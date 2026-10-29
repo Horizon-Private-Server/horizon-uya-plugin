@@ -18,6 +18,24 @@ namespace Horizon.Plugin.UYA
     {
         private static readonly Dictionary<int, GameMetadata> _metadatas = new Dictionary<int, GameMetadata>();
 
+        internal static int GetGenericField3GameMode(Server.Medius.Models.Game game)
+        {
+            var field = unchecked((uint)game.GenericField3);
+            var rules = (((field >> 8) & 0xff) << 16) | (((field >> 16) & 0xff) << 8) | ((field >> 24) & 0xff);
+            return (int)((rules >> 19) & 0x3);
+        }
+
+        internal static bool IsSiege(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 0;
+        internal static bool IsCtf(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 1;
+
+        private static int GetObjectiveLimit(Server.Medius.Models.Game game, GameMetadata metadata)
+        {
+            if (IsCtf(game) || GetGenericField3GameMode(game) == 2)
+                return game.GenericField1;
+
+            return 0;
+        }
+
         public static async Task BroadcastGameConfig(Server.Medius.Models.Game game)
         {
             var metadata = await GetGameMetadata(game);
@@ -93,7 +111,7 @@ namespace Horizon.Plugin.UYA
             var metadata = await GetGameMetadata(game);
 
             // pass to gamemode
-            var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             if (mode != null)
             {
                 await mode.OnClientPostWideStats(args);
@@ -134,18 +152,23 @@ namespace Horizon.Plugin.UYA
         public static async Task<bool> SetGameConfig(Server.Medius.Models.Game game, GameConfig config, GameCustomMapConfig mapConfig)
         {
             var metadata = await GetGameMetadata(game);
+            config ??= new GameConfig();
+            mapConfig ??= new GameCustomMapConfig();
+
+            if (config.isCustomMap == 0 || !mapConfig.HasMap())
+                mapConfig = new GameCustomMapConfig();
 
             // if no change, return false
             if (metadata.GameConfig.SameAs(config) && metadata.CustomMapConfig.SameAs(mapConfig))
                 return false;
 
             // update
-            metadata.GameConfig = config ?? new GameConfig();
-            metadata.CustomMapConfig = mapConfig ?? new GameCustomMapConfig();
+            metadata.GameConfig = config;
+            metadata.CustomMapConfig = mapConfig;
 
             // update other metadata
-            metadata.CustomMap = String.IsNullOrEmpty(metadata.CustomMapConfig.Name) ? null : metadata.CustomMapConfig.Name;
-            metadata.CustomGameMode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride)?.Name;
+            metadata.CustomMap = metadata.GetCustomMapName();
+            metadata.CustomGameMode = Modes.FindCustomModeById(metadata.GetRealCustomModeId())?.Name;
             metadata.GameInfo = await GetGameInfo(game, metadata);
 
             // send to database
@@ -168,6 +191,16 @@ namespace Horizon.Plugin.UYA
             if (metadata == null)
                 metadata = new GameMetadata();
 
+            metadata.CustomMapConfig ??= new GameCustomMapConfig();
+            metadata.GameConfig ??= new GameConfig();
+            metadata.CustomMap = metadata.GetCustomMapName();
+            metadata.CustomGameMode = Modes.FindCustomModeById(metadata.GetRealCustomModeId())?.Name;
+            metadata.GameState ??= new GameState();
+            metadata.PreWideStats ??= new GameStats();
+            metadata.PostWideStats ??= new GameStats();
+            metadata.PreCustomWideStats ??= new GameStats();
+            metadata.PostCustomWideStats ??= new GameStats();
+
             // add to cache
             _metadatas.Add(game.Id, metadata);
 
@@ -182,12 +215,7 @@ namespace Horizon.Plugin.UYA
             await BroadcastMapOverride(game);
 
             // parse gamemode
-            var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
-            if (metadata.CustomMapConfig.HasMap() && metadata.CustomMapConfig.ForcedModeId != 0)
-            {
-                mode = Modes.FindCustomModeById((CustomModeId)metadata.CustomMapConfig.ForcedModeId);
-            }
-
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
 
             // send payloads to all clients
             foreach (var gameClient in game.Clients)
@@ -219,34 +247,31 @@ namespace Horizon.Plugin.UYA
             }
 
             // store player wide stats
-            _ = Task.Run(async () =>
+            foreach (var gameClient in game.Clients)
             {
-                foreach (var gameClient in game.Clients)
-                {
-                    metadata.PreWideStats.Players.Add(gameClient.Client.AccountId, gameClient.Client.WideStats.ToArray());
-                    metadata.PreCustomWideStats.Players.Add(gameClient.Client.AccountId, gameClient.Client.CustomWideStats.ToArray());
-                    metadata.PostWideStats.Players.Add(gameClient.Client.AccountId, gameClient.Client.WideStats.ToArray());
-                    metadata.PostCustomWideStats.Players.Add(gameClient.Client.AccountId, gameClient.Client.CustomWideStats.ToArray());
+                metadata.PreWideStats.Players.TryAdd(gameClient.Client.AccountId, gameClient.Client.WideStats.ToArray());
+                metadata.PreCustomWideStats.Players.TryAdd(gameClient.Client.AccountId, gameClient.Client.CustomWideStats.ToArray());
+                metadata.PostWideStats.Players.TryAdd(gameClient.Client.AccountId, gameClient.Client.WideStats.ToArray());
+                metadata.PostCustomWideStats.Players.TryAdd(gameClient.Client.AccountId, gameClient.Client.CustomWideStats.ToArray());
 
-                    if (gameClient.Client.ClanId.HasValue)
+                if (gameClient.Client.ClanId.HasValue)
+                {
+                    var clanId = gameClient.Client.ClanId.Value;
+                    if (!metadata.PreWideStats.Clans.ContainsKey(clanId))
                     {
-                        var clanId = gameClient.Client.ClanId.Value;
-                        if (!metadata.PreWideStats.Clans.ContainsKey(clanId))
+                        var clan = await Server.Medius.Program.Database.GetClanById(clanId);
+                        if (clan != null)
                         {
-                            var clan = await Server.Medius.Program.Database.GetClanById(clanId);
-                            if (clan != null)
-                            {
-                                metadata.PreWideStats.Clans.Add(clanId, clan.ClanWideStats.ToArray());
-                                metadata.PreCustomWideStats.Clans.Add(clanId, clan.ClanCustomWideStats.ToArray());
-                                metadata.PostWideStats.Clans.Add(clanId, clan.ClanWideStats.ToArray());
-                                metadata.PostCustomWideStats.Clans.Add(clanId, clan.ClanCustomWideStats.ToArray());
-                            }
+                            metadata.PreWideStats.Clans.TryAdd(clanId, clan.ClanWideStats.ToArray());
+                            metadata.PreCustomWideStats.Clans.TryAdd(clanId, clan.ClanCustomWideStats.ToArray());
+                            metadata.PostWideStats.Clans.TryAdd(clanId, clan.ClanWideStats.ToArray());
+                            metadata.PostCustomWideStats.Clans.TryAdd(clanId, clan.ClanCustomWideStats.ToArray());
                         }
                     }
                 }
+            }
 
-                await SetGameMetadata(game, metadata);
-            });
+            await SetGameMetadata(game, metadata);
         }
 
         public static async Task OnGameEnded(Server.Medius.Models.Game game)
@@ -255,7 +280,7 @@ namespace Horizon.Plugin.UYA
             Dictionary<int, int[]> playerCustomStats = null;
 
             // pass to gamemode
-            //var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
+            //var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             //if (mode != null)
             //    playerCustomStats = await mode.OnGameEnd(game, metadata);
 
@@ -296,7 +321,7 @@ namespace Horizon.Plugin.UYA
             string gameInfo = null;
 
             // let custom game mode override the gameinfo string
-            var mode = Modes.FindCustomModeById((CustomModeId)metadata.GameConfig.GamemodeOverride);
+            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
             if (mode != null)
             {
                 gameInfo = await mode.GetGameInfo(game, metadata);
@@ -305,17 +330,14 @@ namespace Horizon.Plugin.UYA
             // default game info
             if (String.IsNullOrEmpty(gameInfo))
             {
-                var scoreToWin = game.GenericField3;
+                var scoreToWin = GetObjectiveLimit(game, metadata);
                 var timelimit = (game.GenericField7 >> 27) & 7;
-                var isLockdown = (game.GenericField7 & (1 << 12)) != 0;
-                var isHomenodes = (game.GenericField7 & (1 << 6)) != 0;
                 string objectiveLabel = null;
 
-                switch (game.RulesSet)
+                switch (GetGenericField3GameMode(game))
                 {
                     case 0: // siege
                         {
-                            objectiveLabel = "Bolts";
                             break;
                         }
                     case 1: // ctf
@@ -337,6 +359,15 @@ namespace Horizon.Plugin.UYA
 
                 gameInfo += $"\nTimelimit: {time}";
 
+                if (IsSiege(game) && metadata.GameState?.Teams?.Count > 0)
+                {
+                    foreach (var team in metadata.GameState.Teams.OrderBy(x => x.Id).Take(2))
+                        gameInfo += $"\n{team.Name} Base Health: {Math.Clamp(team.Score, 0, 100)}%";
+                }
+
+                if (IsCtf(game) && metadata.GameState?.Nodes?.Length >= 2 && metadata.GameState.Nodes[0] >= 0 && metadata.GameState.Nodes[1] >= 0)
+                    gameInfo += $"\nNodes: Blue {metadata.GameState.Nodes[0]} / Red {metadata.GameState.Nodes[1]}";
+
                 // objective
                 if (!String.IsNullOrEmpty(objectiveLabel))
                 {
@@ -350,6 +381,7 @@ namespace Horizon.Plugin.UYA
 
             return gameInfo?.Trim()?.Trim('\n');
         }
+
 
         private static async Task<bool> SetGameMetadata(Server.Medius.Models.Game game, GameMetadata metadata)
         {
@@ -384,6 +416,19 @@ namespace Horizon.Plugin.UYA
         public GameStats PostWideStats { get; set; } = new GameStats();
         public GameStats PreCustomWideStats { get; set; } = new GameStats();
         public GameStats PostCustomWideStats { get; set; } = new GameStats();
+
+        public string GetCustomMapName()
+        {
+            return String.IsNullOrEmpty(CustomMapConfig?.Name) ? null : CustomMapConfig.Name;
+        }
+
+        public CustomModeId GetRealCustomModeId()
+        {
+            if (CustomMapConfig?.HasMap() == true && CustomMapConfig.ForcedModeId != 0)
+                return (CustomModeId)CustomMapConfig.ForcedModeId;
+
+            return (CustomModeId)(GameConfig?.GamemodeOverride ?? 0);
+        }
     }
 
     public class GameStats
@@ -395,20 +440,22 @@ namespace Horizon.Plugin.UYA
     public class PackedGameState
     {
         public bool TeamsEnabled { get; set; }
-        public int RoundNumber { get; set; }
-        public short[] TeamScores { get; set; }
+        public short Version { get; set; }
+        public int[] TeamScores { get; set; }
         public sbyte[] ClientIds { get; set; }
         public sbyte[] Teams { get; set; }
+        public int[] Nodes { get; set; }
 
 
         public void Deserialize(MessageReader reader)
         {
-            TeamsEnabled = reader.ReadInt32() != 0;
-            RoundNumber = reader.ReadInt32();
+            TeamsEnabled = reader.ReadByte() != 0;
+            reader.ReadByte();
+            Version = reader.ReadInt16();
 
-            TeamScores = new short[8];
+            TeamScores = new int[8];
             for (int i = 0; i < 8; ++i)
-                TeamScores[i] = reader.ReadInt16();
+                TeamScores[i] = reader.ReadInt32();
 
             ClientIds = new sbyte[8];
             for (int i = 0; i < 8; ++i)
@@ -417,17 +464,22 @@ namespace Horizon.Plugin.UYA
             Teams = new sbyte[8];
             for (int i = 0; i < 8; ++i)
                 Teams[i] = reader.ReadSByte();
+
+            Nodes = new int[2];
+            for (int i = 0; i < 2; ++i)
+                Nodes[i] = reader.ReadInt32();
         }
 
         public void Serialize(MessageWriter writer)
         {
-            writer.Write(TeamsEnabled ? 1 : 0);
-            writer.Write(RoundNumber);
+            writer.Write((byte)(TeamsEnabled ? 1 : 0));
+            writer.Write((byte)0);
+            writer.Write(Version);
 
             for (int i = 0; i < 8; ++i)
             {
                 if (TeamScores == null || i >= TeamScores.Length)
-                    writer.Write((short)0);
+                    writer.Write(0);
                 else
                     writer.Write(TeamScores[i]);
             }
@@ -447,6 +499,14 @@ namespace Horizon.Plugin.UYA
                 else
                     writer.Write(Teams[i]);
             }
+
+            for (int i = 0; i < 2; ++i)
+            {
+                if (Nodes == null || i >= Nodes.Length)
+                    writer.Write(0);
+                else
+                    writer.Write(Nodes[i]);
+            }
         }
     }
 
@@ -454,6 +514,7 @@ namespace Horizon.Plugin.UYA
     {
         public bool TeamsEnabled { get; set; }
         public int RoundNumber { get; set; }
+        public int[] Nodes { get; set; }
         public List<GameStateTeam> Teams { get; set; } = new List<GameStateTeam>();
 
         public GameState()
@@ -464,7 +525,8 @@ namespace Horizon.Plugin.UYA
         public GameState(PackedGameState packedGameState, Server.Medius.Models.Game game)
         {
             TeamsEnabled = packedGameState.TeamsEnabled;
-            RoundNumber = packedGameState.RoundNumber;
+            RoundNumber = packedGameState.Version;
+            Nodes = packedGameState.Nodes;
 
             var clientIdCounter = new int[8];
 
@@ -472,11 +534,14 @@ namespace Horizon.Plugin.UYA
             {
                 var clientId = packedGameState.ClientIds[i];
                 var teamId = packedGameState.Teams[i];
+                if (clientId < 0 || clientId >= clientIdCounter.Length || teamId < 0)
+                    continue;
+
                 var player = game.Clients.FirstOrDefault(x => x.DmeId == clientId);
                 if (player != null)
                 {
                     clientIdCounter[clientId]++;
-                    var score = packedGameState.TeamScores[teamId];
+                    var score = packedGameState.TeamScores != null && teamId < packedGameState.TeamScores.Length ? packedGameState.TeamScores[teamId] : 0;
                     var name = player.Client.AccountName;
                     if (clientIdCounter[clientId] > 1)
                         name += $" ~ {clientIdCounter[clientId]}";
@@ -496,6 +561,28 @@ namespace Horizon.Plugin.UYA
                     else
                     {
                         team.Players.Add(name);
+                    }
+                }
+            }
+
+            if (Game.IsSiege(game))
+            {
+                for (int teamId = 0; teamId < 2; ++teamId)
+                {
+                    var score = packedGameState.TeamScores != null && teamId < packedGameState.TeamScores.Length ? packedGameState.TeamScores[teamId] : 100;
+                    var team = this.Teams.FirstOrDefault(x => x.Id == teamId);
+                    if (team == null)
+                    {
+                        this.Teams.Add(new GameStateTeam()
+                        {
+                            Id = teamId,
+                            Name = Constants.Teams.ElementAtOrDefault(teamId) ?? $"Team {teamId}",
+                            Score = score
+                        });
+                    }
+                    else
+                    {
+                        team.Score = score;
                     }
                 }
             }
@@ -535,8 +622,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(Version);
                     writer.Write(BaseMapId);
                     writer.Write(ForcedModeId);
-                    writer.Write(Name, 32);
-                    writer.Write(Filename, 64);
+                    writer.Write(Name ?? String.Empty, 32);
+                    writer.Write(Filename ?? String.Empty, 64);
                 }
             }
 
@@ -554,6 +641,9 @@ namespace Horizon.Plugin.UYA
 
         public bool SameAs(GameCustomMapConfig other)
         {
+            if (other == null)
+                return false;
+
             return Filename == other.Filename
                 && Name == other.Name
                 && Version == other.Version
@@ -723,6 +813,9 @@ namespace Horizon.Plugin.UYA
 
         public bool SameAs(GameConfig other)
         {
+            if (other == null)
+                return false;
+
             return isCustomMap == other.isCustomMap
                 && GamemodeOverride == other.GamemodeOverride
                 && grRadarBlipsDistance == other.grRadarBlipsDistance
