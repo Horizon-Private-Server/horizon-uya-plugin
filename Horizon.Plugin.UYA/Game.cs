@@ -1,4 +1,4 @@
-﻿using Horizon.Plugin.UYA.Messages;
+using Horizon.Plugin.UYA.Messages;
 using Newtonsoft.Json;
 using RT.Common;
 using Server.Common;
@@ -90,6 +90,10 @@ namespace Horizon.Plugin.UYA
                 {
                     Config = metadata.GameConfig
                 });
+
+				if (game.WorldStatus == MediusWorldStatus.WorldActive &&
+					metadata.GetRealCustomModeId() == CustomModeId.CMODE_ID_KOTH)
+					await sendGameMode(client, game, metadata);
             }
         }
 
@@ -207,6 +211,33 @@ namespace Horizon.Plugin.UYA
             return Task.FromResult(metadata);
         }
 
+		private static async Task sendGameMode(ClientObject client, Server.Medius.Models.Game game, GameMetadata metadata)
+		{
+			var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
+			if (mode == null)
+				return;
+
+			var payload = await mode.GetPayload(game, client, metadata);
+			if (payload == null)
+				return;
+
+			// Disable a previous module before overwriting it. Publish its entry
+			// only after all code bytes have arrived at the client.
+			var payloads = new List<Payload>
+			{
+				new Payload(Regions.MODULE_DEFINITIONS, new PatchModuleEntry().Serialize()),
+				payload,
+				new Payload(Regions.MODULE_DEFINITIONS, new PatchModuleEntry
+				{
+					Type = PatchModuleEntryType.RUN_ONCE_GAME,
+					GameEntrypoint = payload.Address,
+					LobbyEntrypoint = payload.Address + 8,
+					LoadEntrypoint = payload.Address + 16,
+				}.Serialize())
+			};
+			await Downloader.InitiateDataDownload(client, 201, payloads);
+		}
+
         public static async Task OnGameStarted(Server.Medius.Models.Game game)
         {
             var metadata = await GetGameMetadata(game);
@@ -214,37 +245,9 @@ namespace Horizon.Plugin.UYA
             // send map override to all clients
             await BroadcastMapOverride(game);
 
-            // parse gamemode
-            var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
-
-            // send payloads to all clients
-            foreach (var gameClient in game.Clients)
-            {
-                // construct payloads to send to client
-                var payloads = new List<Payload>();
-
-                if (mode != null)
-                {
-                    var modePayload = await mode.GetPayload(game, gameClient.Client, metadata);
-                    if (modePayload != null)
-                    {
-                        // add mode payload
-                        payloads.Add(modePayload);
-
-                        // add mode module entry
-                        payloads.Add(new Payload(Regions.MODULE_DEFINITIONS, new PatchModuleEntry()
-                        {
-                            Type = PatchModuleEntryType.RUN_ONCE_GAME,
-                            GameEntrypoint = modePayload.Address,
-                            LobbyEntrypoint = modePayload.Address + 8,
-                            LoadEntrypoint = modePayload.Address + 16,
-                        }.Serialize()));
-                    }
-                }
-
-                if (payloads.Count > 0)
-                    await Downloader.InitiateDataDownload(gameClient.Client, 201, payloads);
-            }
+			// Use the same payload/entry ordering for initial and late joiners.
+			foreach (var gameClient in game.Clients)
+				await sendGameMode(gameClient.Client, game, metadata);
 
             // store player wide stats
             foreach (var gameClient in game.Clients)
