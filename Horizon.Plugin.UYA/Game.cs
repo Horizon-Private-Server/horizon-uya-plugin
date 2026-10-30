@@ -91,8 +91,7 @@ namespace Horizon.Plugin.UYA
                     Config = metadata.GameConfig
                 });
 
-				if (game.WorldStatus == MediusWorldStatus.WorldActive &&
-					metadata.GetRealCustomModeId() == CustomModeId.CMODE_ID_KOTH)
+				if (game.WorldStatus == MediusWorldStatus.WorldActive)
 					await sendGameMode(client, game, metadata);
             }
         }
