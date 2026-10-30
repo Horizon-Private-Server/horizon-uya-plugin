@@ -934,6 +934,12 @@ namespace Horizon.Plugin.UYA
                                 {
                                     var request = new SetGameStateRequestMessage();
                                     request.Deserialize(reader);
+									// The native session elects a replacement host after a departure.
+									// Its first host-only state report restores plugin ownership too.
+									var game = msg.Player.CurrentGame;
+									if (game.Host == null && game.WorldStatus == MediusWorldStatus.WorldActive &&
+										game.Clients.Any(x => x.Client == msg.Player && x.InGame))
+										game.Host = msg.Player;
                                     await Game.SetGameState(msg.Player.CurrentGame, request.State);
                                 }
                                 break;
