@@ -940,6 +940,8 @@ namespace Horizon.Plugin.UYA
 									if (game.Host == null && game.WorldStatus == MediusWorldStatus.WorldActive &&
 										game.Clients.Any(x => x.Client == msg.Player && x.InGame))
 										game.Host = msg.Player;
+									if (game.Host != msg.Player)
+										break;
                                     await Game.SetGameState(msg.Player.CurrentGame, request.State);
                                 }
                                 break;
