@@ -91,6 +91,8 @@ namespace Horizon.Plugin.UYA
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.GameList_ExtraInfo, OnRecvGameListExtraInfo);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.WorldReport0, onMigrationWorldReport);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.WorldReport, onMigrationWorldReport);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
             return Task.CompletedTask;
@@ -389,6 +391,60 @@ namespace Horizon.Plugin.UYA
             await Downloader.OnPlayerLoggedOut(msg.Player);
         }
 
+		private readonly HashSet<int> migratedWorlds = new HashSet<int>();
+
+		/*
+		 * NAME : onMigrationWorldReport
+		 * DESCRIPTION : Preserve a running game's listing when its host leaves.
+		 * NOTES : Only when mid-game joining is enabled; OFF keeps native reports unchanged.
+		 * ARGS : Incoming native world report.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onMigrationWorldReport(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!SupportedAppIds.Contains(args.Player.ApplicationId))
+				return;
+
+			var game = args.Player.CurrentGame;
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+
+			int worldId;
+			MediusWorldStatus status;
+			if (args.Message is MediusWorldReport0 report0) {
+				worldId = report0.MediusWorldID;
+				status = report0.WorldStatus;
+			} else if (args.Message is MediusWorldReport report) {
+				worldId = report.MediusWorldID;
+				status = report.WorldStatus;
+			} else {
+				return;
+			}
+
+			if (worldId != game.Id || status != MediusWorldStatus.WorldInactive)
+				return;
+
+			var metadata = await Game.GetGameMetadata(game);
+			if (metadata.GameConfig?.allowMidGameJoining != true) {
+				migratedWorlds.Remove(game.Id);
+				return;
+			}
+
+			bool continuing = migratedWorlds.Contains(game.Id) ||
+				(game.Host == args.Player && game.Clients.Any(x =>
+					x.Client != args.Player && x.InGame && x.Client.IsConnected));
+			if (continuing && game.Clients.Any(x => x.InGame && x.Client.IsConnected)) {
+				migratedWorlds.Add(game.Id);
+				// This report may precede HostLeft and contain an empty game name.
+				// Preserve the complete live listing rather than copying departure fields.
+				args.Ignore = true;
+			}
+			return;
+		}
+
         Task OnWorldReport0(PluginEvent eventType, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnWorldReport0Args)data;
@@ -405,7 +461,7 @@ namespace Horizon.Plugin.UYA
                 gameName = "[IG] " + gameName;
             }
 
-            report.GameName = ConstructGameNameWithModeAndMap(game, gameName);
+            report.GameName = ConstructGameNameWithModeAndMap(game, gameName, report.WorldStatus);
             return Task.CompletedTask;
         }
 
@@ -440,6 +496,7 @@ namespace Horizon.Plugin.UYA
             if (!SupportedAppIds.Contains(msg.Game.ApplicationId))
                 return Task.CompletedTask;
 
+			migratedWorlds.Remove(msg.Game.Id);
             return Game.OnGameDestroyed(msg.Game);
         }
 
@@ -461,19 +518,37 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        Task OnHostLeftGame(PluginEvent eventId, object data)
+		/*
+		 * NAME : OnHostLeftGame
+		 * DESCRIPTION : Track continuing games only when mid-game joining is enabled.
+		 * NOTES : OFF leaves native listing behavior unchanged.
+		 * ARGS : Departing host and game.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+        async Task OnHostLeftGame(PluginEvent eventId, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnPlayerGameArgs)data;
             if (msg.Player == null || msg.Game == null)
-                return Task.CompletedTask;
+                return;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return Task.CompletedTask;
+                return;
+
+			var metadata = await Game.GetGameMetadata(msg.Game);
+			if (metadata.GameConfig?.allowMidGameJoining != true) {
+				migratedWorlds.Remove(msg.Game.Id);
+				return;
+			}
+
+			if (msg.Game.WorldStatus == MediusWorldStatus.WorldActive &&
+				msg.Game.Clients.Any(x => x.Client != msg.Player && x.InGame && x.Client.IsConnected))
+				migratedWorlds.Add(msg.Game.Id);
 
             // close world if host left staging
             //if (msg.Game.WorldStatus == MediusWorldStatus.WorldStaging)
             //    return msg.Game.SetWorldStatus(MediusWorldStatus.WorldClosed);
 
-            return Task.CompletedTask;
+            return;
         }
         
 
@@ -896,6 +971,8 @@ namespace Horizon.Plugin.UYA
                                     // try to update game config
                                     if (await Game.SetGameConfig(msg.Player.CurrentGame, request.Config, request.CustomMapConfig))
                                     {
+                                        msg.Player.CurrentGame.GameName = ConstructGameNameWithModeAndMap(msg.Player.CurrentGame);
+
                                         // send new game config to other players in lobby
                                         await Game.BroadcastGameConfig(msg.Player.CurrentGame);
                                     }
@@ -906,7 +983,10 @@ namespace Horizon.Plugin.UYA
                             {
                                 var game = msg.Player.CurrentGame;
                                 if (game != null && game.Host == msg.Player && game.WorldStatus == MediusWorldStatus.WorldStaging)
+                                {
                                     await game.SetWorldStatus(MediusWorldStatus.WorldActive);
+                                    game.GameName = ConstructGameNameWithModeAndMap(game);
+                                }
                                 break;
                             }
                         case 12: // game ended
@@ -1225,18 +1305,16 @@ namespace Horizon.Plugin.UYA
 
         string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game)
         {
-            return ConstructGameNameWithModeAndMap(game, game.GameName);
+            return ConstructGameNameWithModeAndMap(game, game.GameName, game.WorldStatus);
         }
 
-        string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game, string gameName)
+        string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game, string gameName, MediusWorldStatus status)
         {
             var metadata = Game.GetGameMetadata(game).Result;
             if (metadata == null || metadata.GameConfig == null) return gameName;
 
             var customModeId = (byte)metadata.GetRealCustomModeId();
             var customMapName = metadata.GetCustomMapName();
-            if (customModeId == 0 && String.IsNullOrEmpty(customMapName))
-                return gameName;
 
             // add gamename
             var name = StripPackedGameName(gameName);
@@ -1245,7 +1323,9 @@ namespace Horizon.Plugin.UYA
             name += '\0';
 
             // add effective mode
-            name += (char)(customModeId >> 4);
+            name += (char)((customModeId >> 4) | 0x20 |
+                (metadata.GameConfig.allowMidGameJoining ? 0x10 : 0) |
+                (status == MediusWorldStatus.WorldActive ? 0x40 : 0));
             name += (char)(customModeId & 0xf);
 
             // add map name
