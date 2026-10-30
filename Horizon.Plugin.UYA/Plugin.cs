@@ -87,6 +87,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
             host.RegisterAction(PluginEvent.MEDIUS_ON_ACCOUNT_UPDATE_STATS, OnAccountUpdateStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.GameWorldPlayerList, onGameWorldPlayerList);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.GameList_ExtraInfo, OnRecvGameListExtraInfo);
@@ -1097,6 +1098,66 @@ namespace Horizon.Plugin.UYA
         public void DebugLog(string text) {
             Host.Log(InternalLogLevel.INFO, "UYA Plugin Logging: " + text);
         }
+
+		/*
+		 * NAME : onGameWorldPlayerList
+		 * DESCRIPTION : Add host-reported team IDs to UYA Game Details roster entries.
+		 * NOTES : Stats[0xfc..0xff] contains 'U', 'Y', 'A', team (0..7 or 0xff unknown).
+		 * ARGS :
+		 * RETURN :
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onGameWorldPlayerList(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Message is not MediusGameWorldPlayerListRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || game.ApplicationId != args.Player.ApplicationId)
+				return;
+
+			var metadata = await Game.GetGameMetadata(game);
+			var players = game.Clients.Where(x => x != null && x.InGame && x.Client.IsConnected)
+				.Select(x => new MediusGameWorldPlayerListResponse
+				{
+					MessageID = request.MessageID,
+					StatusCode = MediusCallbackStatus.MediusSuccess,
+					AccountID = x.Client.AccountId,
+					AccountName = x.Client.AccountName,
+					ConnectionClass = MediusConnectionType.Ethernet
+				}).ToArray();
+
+			foreach (var player in players)
+			{
+				int offset = RT.Common.Constants.ACCOUNTSTATS_MAXLEN - 4;
+				player.Stats[offset] = (byte)'U';
+				player.Stats[offset + 1] = (byte)'Y';
+				player.Stats[offset + 2] = (byte)'A';
+				player.Stats[offset + 3] = 0xff;
+				if (metadata.GameState?.PlayerTeams != null &&
+					metadata.GameState.PlayerTeams.TryGetValue(player.AccountID, out int team) && team >= 0 && team < 8)
+					player.Stats[offset + 3] = (byte)team;
+			}
+
+			if (players.Length > 0)
+			{
+				players[players.Length - 1].EndOfList = true;
+				args.Player.Queue(players);
+			}
+			else
+			{
+				args.Player.Queue(new MediusGameWorldPlayerListResponse
+				{
+					MessageID = request.MessageID,
+					StatusCode = MediusCallbackStatus.MediusNoResult,
+					EndOfList = true
+				});
+			}
+			args.Ignore = true;
+		}
 
         Task OnRecvGameListExtraInfo(NetMessageTypes msgClass, byte msgType, object data)
         {

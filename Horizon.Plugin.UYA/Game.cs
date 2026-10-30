@@ -526,6 +526,7 @@ namespace Horizon.Plugin.UYA
         public int RoundNumber { get; set; }
         public int[] Nodes { get; set; }
         public List<GameStateTeam> Teams { get; set; } = new List<GameStateTeam>();
+		public Dictionary<int, int> PlayerTeams { get; set; } = new Dictionary<int, int>();
 
         public GameState()
         {
@@ -544,12 +545,14 @@ namespace Horizon.Plugin.UYA
             {
                 var clientId = packedGameState.ClientIds[i];
                 var teamId = packedGameState.Teams[i];
-                if (clientId < 0 || clientId >= clientIdCounter.Length || teamId < 0)
+                if (clientId < 0 || clientId >= clientIdCounter.Length || teamId < 0 || teamId >= 8)
                     continue;
 
                 var player = game.Clients.FirstOrDefault(x => x.DmeId == clientId);
                 if (player != null)
                 {
+					// A client can own split-screen slots; the account row represents its primary player.
+					PlayerTeams.TryAdd(player.Client.AccountId, teamId);
                     clientIdCounter[clientId]++;
                     var score = packedGameState.TeamScores != null && teamId < packedGameState.TeamScores.Length ? packedGameState.TeamScores[teamId] : 0;
                     var name = player.Client.AccountName;
