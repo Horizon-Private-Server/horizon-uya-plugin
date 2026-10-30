@@ -79,6 +79,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_WORLD_REPORT0, OnWorldReport0);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_ENDED, OnGameEnded);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
+			host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOIN_GAME, onPlayerJoiningGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
             host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
@@ -573,6 +574,28 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
+
+		/*
+		 * NAME : onPlayerJoiningGame
+		 * DESCRIPTION : Send running-game rules before the native join response starts loading.
+		 * NOTES :
+		 * ARGS :
+		 * RETURN :
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onPlayerJoiningGame(PluginEvent eventId, object data)
+		{
+			var args = (Server.Medius.PluginArgs.OnPlayerRequestArgs)data;
+			if (args.Player == null || !SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Request is not MediusJoinGameRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+			var metadata = await Game.GetGameMetadata(game);
+			args.Player.Queue(new SetGameConfigResponseMessage { Config = metadata.GameConfig });
+		}
 
         Task OnPlayerJoinedGame(PluginEvent eventId, object data)
         {

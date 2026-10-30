@@ -211,6 +211,14 @@ namespace Horizon.Plugin.UYA
             return Task.FromResult(metadata);
         }
 
+		/*
+		 * NAME : sendGameMode
+		 * DESCRIPTION : Download mode code before publishing its enabled module entry.
+		 * NOTES :
+		 * ARGS :
+		 * RETURN :
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
 		private static async Task sendGameMode(ClientObject client, Server.Medius.Models.Game game, GameMetadata metadata)
 		{
 			var mode = Modes.FindCustomModeById(metadata.GetRealCustomModeId());
