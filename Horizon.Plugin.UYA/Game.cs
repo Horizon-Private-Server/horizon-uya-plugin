@@ -76,6 +76,28 @@ namespace Horizon.Plugin.UYA
             await Maps.SendMapOverride(client, metadata.CustomMapConfig);
         }
 
+		/*
+		 * NAME : restoreClientAfterReload
+		 * DESCRIPTION : Restore one live client's rules, map override and custom-mode payload.
+		 * NOTES : Includes the host, whose patch globals were also cleared.
+		 * ARGS : Client that requested recovery after patch initialization.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		public static async Task restoreClientAfterReload(ClientObject client)
+		{
+			var game = client.CurrentGame;
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+			var metadata = await GetGameMetadata(game);
+			if (client.CurrentGame != game || !client.IsConnected || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+
+			client.Queue(new SetGameConfigResponseMessage { Config = metadata.GameConfig });
+			await Maps.SendMapOverride(client, metadata.CustomMapConfig);
+			await sendGameMode(client, game, metadata);
+		}
+
         public static async Task PlayerJoined(ClientObject client, Server.Medius.Models.Game game)
         {
             var metadata = await GetGameMetadata(game);

@@ -973,7 +973,12 @@ namespace Horizon.Plugin.UYA
                             {
                                 var requestMessage = new GetMapOverrideRequestMessage();
                                 requestMessage.Deserialize(reader);
-                                await Game.SendMapOverride(msg.Player);
+                                // A reloaded patch requests its current rules and mode again.
+                                if (contents.Length > 4 && contents[4] == 1 &&
+                                    msg.Player.CurrentGame?.WorldStatus == MediusWorldStatus.WorldActive)
+                                    await Game.restoreClientAfterReload(msg.Player);
+                                else
+                                    await Game.SendMapOverride(msg.Player);
                                 break;
                             }
                         case 8: // set player patch config
