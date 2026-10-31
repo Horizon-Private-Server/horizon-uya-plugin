@@ -76,6 +76,28 @@ namespace Horizon.Plugin.UYA
             await Maps.SendMapOverride(client, metadata.CustomMapConfig);
         }
 
+		/*
+		 * NAME : restoreClientAfterReload
+		 * DESCRIPTION : Restore one live client's rules, map override and custom-mode payload.
+		 * NOTES : Includes the host, whose patch globals were also cleared.
+		 * ARGS : Client that requested recovery after patch initialization.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		public static async Task restoreClientAfterReload(ClientObject client)
+		{
+			var game = client.CurrentGame;
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+			var metadata = await GetGameMetadata(game);
+			if (client.CurrentGame != game || !client.IsConnected || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+
+			client.Queue(new SetGameConfigResponseMessage { Config = metadata.GameConfig });
+			await Maps.SendMapOverride(client, metadata.CustomMapConfig);
+			await sendGameMode(client, game, metadata);
+		}
+
         public static async Task PlayerJoined(ClientObject client, Server.Medius.Models.Game game)
         {
             var metadata = await GetGameMetadata(game);
@@ -91,8 +113,7 @@ namespace Horizon.Plugin.UYA
                     Config = metadata.GameConfig
                 });
 
-				if (game.WorldStatus == MediusWorldStatus.WorldActive &&
-					metadata.GetRealCustomModeId() == CustomModeId.CMODE_ID_KOTH)
+				if (game.WorldStatus == MediusWorldStatus.WorldActive)
 					await sendGameMode(client, game, metadata);
             }
         }
@@ -527,6 +548,7 @@ namespace Horizon.Plugin.UYA
         public int RoundNumber { get; set; }
         public int[] Nodes { get; set; }
         public List<GameStateTeam> Teams { get; set; } = new List<GameStateTeam>();
+		public Dictionary<int, int> PlayerTeams { get; set; } = new Dictionary<int, int>();
 
         public GameState()
         {
@@ -545,12 +567,14 @@ namespace Horizon.Plugin.UYA
             {
                 var clientId = packedGameState.ClientIds[i];
                 var teamId = packedGameState.Teams[i];
-                if (clientId < 0 || clientId >= clientIdCounter.Length || teamId < 0)
+                if (clientId < 0 || clientId >= clientIdCounter.Length || teamId < 0 || teamId >= 8)
                     continue;
 
                 var player = game.Clients.FirstOrDefault(x => x.DmeId == clientId);
                 if (player != null)
                 {
+					// A client can own split-screen slots; the account row represents its primary player.
+					PlayerTeams.TryAdd(player.Client.AccountId, teamId);
                     clientIdCounter[clientId]++;
                     var score = packedGameState.TeamScores != null && teamId < packedGameState.TeamScores.Length ? packedGameState.TeamScores[teamId] : 0;
                     var name = player.Client.AccountName;
