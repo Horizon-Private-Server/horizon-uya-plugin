@@ -1196,7 +1196,7 @@ namespace Horizon.Plugin.UYA
 				return;
 
 			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
-			if (game == null || game.ApplicationId != args.Player.ApplicationId)
+			if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
 				return;
 
 			var metadata = await Game.GetGameMetadata(game);
@@ -1315,6 +1315,10 @@ namespace Horizon.Plugin.UYA
 
             var customModeId = (byte)metadata.GetRealCustomModeId();
             var customMapName = metadata.GetCustomMapName();
+
+            // Vanilla setup keeps the native name; join flags are only needed in-game.
+            if (status != MediusWorldStatus.WorldActive && customModeId == 0 && String.IsNullOrEmpty(customMapName))
+                return StripPackedGameName(gameName);
 
             // add gamename
             var name = StripPackedGameName(gameName);
