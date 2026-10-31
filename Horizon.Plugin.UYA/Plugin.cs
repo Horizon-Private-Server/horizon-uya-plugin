@@ -87,6 +87,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
             host.RegisterAction(PluginEvent.MEDIUS_ON_ACCOUNT_UPDATE_STATS, OnAccountUpdateStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.JoinGame, onJoinGameRequest);
 			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.GameWorldPlayerList, onGameWorldPlayerList);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
@@ -650,6 +651,50 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
+
+		/*
+		 * NAME : onJoinGameRequest
+		 * DESCRIPTION : Reject unavailable or disallowed joins before native admission.
+		 * NOTES : Pre-game joins retain native admission and password handling.
+		 * ARGS : Incoming UYA join request.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onJoinGameRequest(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!args.Player.IsLoggedIn || !SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Message is not MediusJoinGameRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
+				return;
+
+			var status = MediusCallbackStatus.MediusSuccess;
+			if (game.WorldStatus == MediusWorldStatus.WorldClosed || game.WorldStatus == MediusWorldStatus.WorldInactive) {
+				status = MediusCallbackStatus.MediusGameNotFound;
+			} else if (game.WorldStatus == MediusWorldStatus.WorldActive) {
+				var metadata = await Game.GetGameMetadata(game);
+				// Metadata lookup may yield; recheck the live world before accepting.
+				if (game.WorldStatus != MediusWorldStatus.WorldActive || game.Host == null || !game.Host.IsConnected)
+					status = MediusCallbackStatus.MediusGameNotFound;
+				else if (metadata.GameConfig?.allowMidGameJoining != true)
+					status = MediusCallbackStatus.MediusRequestDenied;
+				else if (game.PlayerCount >= Math.Min(game.MaxPlayers, 8))
+					status = MediusCallbackStatus.MediusWorldIsFull;
+			}
+
+			if (status == MediusCallbackStatus.MediusSuccess)
+				return;
+
+			args.Ignore = true;
+			args.Player.Queue(new MediusJoinGameResponse {
+				MessageID = request.MessageID,
+				StatusCode = status
+			});
+		}
 
 		/*
 		 * NAME : onPlayerJoiningGame
