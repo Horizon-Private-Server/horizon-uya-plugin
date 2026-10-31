@@ -1,4 +1,4 @@
-﻿using DotNetty.Common.Internal.Logging;
+using DotNetty.Common.Internal.Logging;
 using Horizon.Plugin.UYA.Messages;
 using RT.Common;
 using RT.Models;
@@ -79,6 +79,7 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_WORLD_REPORT0, OnWorldReport0);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_ENDED, OnGameEnded);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOINED_GAME, OnPlayerJoinedGame);
+			host.RegisterAction(PluginEvent.MEDIUS_PLAYER_ON_JOIN_GAME, onPlayerJoiningGame);
             host.RegisterAction(PluginEvent.MEDIUS_GAME_ON_HOST_LEFT, OnHostLeftGame);
             host.RegisterAction(PluginEvent.MEDIUS_PLAYER_POST_WIDE_STATS, OnPlayerPostWideStats);
             host.RegisterAction(PluginEvent.MEDIUS_FIND_PLAYER_ACCOUNT_NAME, OnFindPlayerAccountName);
@@ -86,8 +87,13 @@ namespace Horizon.Plugin.UYA
             host.RegisterAction(PluginEvent.MEDIUS_CLAN_ON_UPDATE_STATS, OnUpdateClanStats);
             host.RegisterAction(PluginEvent.MEDIUS_ON_ACCOUNT_UPDATE_STATS, OnAccountUpdateStats);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.PlayerInfo, OnPlayerInfoRequest);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.JoinGame, onJoinGameRequest);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.GameWorldPlayerList, onGameWorldPlayerList);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassDME, 8, OnRecvCustomMessage);
             host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.DnasSignaturePost, OnRecvDnasSignature);
+            host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.GameList_ExtraInfo, OnRecvGameListExtraInfo);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobby, (byte)MediusLobbyMessageIds.WorldReport0, onMigrationWorldReport);
+			host.RegisterMediusMessageAction(NetMessageTypes.MessageClassLobbyExt, (byte)MediusLobbyExtMessageIds.WorldReport, onMigrationWorldReport);
             host.RegisterMessageAction(RT_MSG_TYPE.RT_MSG_SERVER_CHEAT_QUERY, OnRecvCheatQuery);
 
             return Task.CompletedTask;
@@ -386,16 +392,77 @@ namespace Horizon.Plugin.UYA
             await Downloader.OnPlayerLoggedOut(msg.Player);
         }
 
+		private readonly HashSet<int> migratedWorlds = new HashSet<int>();
+
+		/*
+		 * NAME : onMigrationWorldReport
+		 * DESCRIPTION : Preserve a running game's listing when its host leaves.
+		 * NOTES : Only when mid-game joining is enabled; OFF keeps native reports unchanged.
+		 * ARGS : Incoming native world report.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onMigrationWorldReport(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!SupportedAppIds.Contains(args.Player.ApplicationId))
+				return;
+
+			var game = args.Player.CurrentGame;
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+
+			int worldId;
+			MediusWorldStatus status;
+			if (args.Message is MediusWorldReport0 report0) {
+				worldId = report0.MediusWorldID;
+				status = report0.WorldStatus;
+			} else if (args.Message is MediusWorldReport report) {
+				worldId = report.MediusWorldID;
+				status = report.WorldStatus;
+			} else {
+				return;
+			}
+
+			if (worldId != game.Id || status != MediusWorldStatus.WorldInactive)
+				return;
+
+			var metadata = await Game.GetGameMetadata(game);
+			if (metadata.GameConfig?.allowMidGameJoining != true) {
+				migratedWorlds.Remove(game.Id);
+				return;
+			}
+
+			bool continuing = migratedWorlds.Contains(game.Id) ||
+				(game.Host == args.Player && game.Clients.Any(x =>
+					x.Client != args.Player && x.InGame && x.Client.IsConnected));
+			if (continuing && game.Clients.Any(x => x.InGame && x.Client.IsConnected)) {
+				migratedWorlds.Add(game.Id);
+				// This report may precede HostLeft and contain an empty game name.
+				// Preserve the complete live listing rather than copying departure fields.
+				args.Ignore = true;
+			}
+			return;
+		}
+
         Task OnWorldReport0(PluginEvent eventType, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnWorldReport0Args)data;
             MediusWorldReport0 report = (MediusWorldReport0)msg.Request;
+            var game = Program.Manager.GetGameByGameId(report.MediusWorldID);
+            if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
+                return Task.CompletedTask;
 
-            if (report.WorldStatus == MediusWorldStatus.WorldActive && !report.GameName.StartsWith("[IG] "))
+            var gameName = StripPackedGameName(report.GameName);
+
+            if (report.WorldStatus == MediusWorldStatus.WorldActive && !gameName.StartsWith("[IG] "))
             {
 
-                report.GameName = "[IG] " + report.GameName;
+                gameName = "[IG] " + gameName;
             }
+
+            report.GameName = ConstructGameNameWithModeAndMap(game, gameName, report.WorldStatus);
             return Task.CompletedTask;
         }
 
@@ -430,6 +497,7 @@ namespace Horizon.Plugin.UYA
             if (!SupportedAppIds.Contains(msg.Game.ApplicationId))
                 return Task.CompletedTask;
 
+			migratedWorlds.Remove(msg.Game.Id);
             return Game.OnGameDestroyed(msg.Game);
         }
 
@@ -451,19 +519,37 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
-        Task OnHostLeftGame(PluginEvent eventId, object data)
+		/*
+		 * NAME : OnHostLeftGame
+		 * DESCRIPTION : Track continuing games only when mid-game joining is enabled.
+		 * NOTES : OFF leaves native listing behavior unchanged.
+		 * ARGS : Departing host and game.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+        async Task OnHostLeftGame(PluginEvent eventId, object data)
         {
             var msg = (Server.Medius.PluginArgs.OnPlayerGameArgs)data;
             if (msg.Player == null || msg.Game == null)
-                return Task.CompletedTask;
+                return;
             if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
-                return Task.CompletedTask;
+                return;
+
+			var metadata = await Game.GetGameMetadata(msg.Game);
+			if (metadata.GameConfig?.allowMidGameJoining != true) {
+				migratedWorlds.Remove(msg.Game.Id);
+				return;
+			}
+
+			if (msg.Game.WorldStatus == MediusWorldStatus.WorldActive &&
+				msg.Game.Clients.Any(x => x.Client != msg.Player && x.InGame && x.Client.IsConnected))
+				migratedWorlds.Add(msg.Game.Id);
 
             // close world if host left staging
             //if (msg.Game.WorldStatus == MediusWorldStatus.WorldStaging)
             //    return msg.Game.SetWorldStatus(MediusWorldStatus.WorldClosed);
 
-            return Task.CompletedTask;
+            return;
         }
         
 
@@ -565,6 +651,72 @@ namespace Horizon.Plugin.UYA
             return Task.CompletedTask;
         }
 
+
+		/*
+		 * NAME : onJoinGameRequest
+		 * DESCRIPTION : Reject unavailable or disallowed joins before native admission.
+		 * NOTES : Pre-game joins retain native admission and password handling.
+		 * ARGS : Incoming UYA join request.
+		 * RETURN : Completed task.
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onJoinGameRequest(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!args.Player.IsLoggedIn || !SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Message is not MediusJoinGameRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
+				return;
+
+			var status = MediusCallbackStatus.MediusSuccess;
+			if (game.WorldStatus == MediusWorldStatus.WorldClosed || game.WorldStatus == MediusWorldStatus.WorldInactive) {
+				status = MediusCallbackStatus.MediusGameNotFound;
+			} else if (game.WorldStatus == MediusWorldStatus.WorldActive) {
+				var metadata = await Game.GetGameMetadata(game);
+				// Metadata lookup may yield; recheck the live world before accepting.
+				if (game.WorldStatus != MediusWorldStatus.WorldActive || game.Host == null || !game.Host.IsConnected)
+					status = MediusCallbackStatus.MediusGameNotFound;
+				else if (metadata.GameConfig?.allowMidGameJoining != true)
+					status = MediusCallbackStatus.MediusRequestDenied;
+				else if (game.PlayerCount >= Math.Min(game.MaxPlayers, 8))
+					status = MediusCallbackStatus.MediusWorldIsFull;
+			}
+
+			if (status == MediusCallbackStatus.MediusSuccess)
+				return;
+
+			args.Ignore = true;
+			args.Player.Queue(new MediusJoinGameResponse {
+				MessageID = request.MessageID,
+				StatusCode = status
+			});
+		}
+
+		/*
+		 * NAME : onPlayerJoiningGame
+		 * DESCRIPTION : Send running-game rules before the native join response starts loading.
+		 * NOTES :
+		 * ARGS :
+		 * RETURN :
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onPlayerJoiningGame(PluginEvent eventId, object data)
+		{
+			var args = (Server.Medius.PluginArgs.OnPlayerRequestArgs)data;
+			if (args.Player == null || !SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Request is not MediusJoinGameRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || game.WorldStatus != MediusWorldStatus.WorldActive)
+				return;
+			var metadata = await Game.GetGameMetadata(game);
+			args.Player.Queue(new SetGameConfigResponseMessage { Config = metadata.GameConfig });
+		}
 
         Task OnPlayerJoinedGame(PluginEvent eventId, object data)
         {
@@ -821,7 +973,12 @@ namespace Horizon.Plugin.UYA
                             {
                                 var requestMessage = new GetMapOverrideRequestMessage();
                                 requestMessage.Deserialize(reader);
-                                await Game.SendMapOverride(msg.Player);
+                                // A reloaded patch requests its current rules and mode again.
+                                if (contents.Length > 4 && contents[4] == 1 &&
+                                    msg.Player.CurrentGame?.WorldStatus == MediusWorldStatus.WorldActive)
+                                    await Game.restoreClientAfterReload(msg.Player);
+                                else
+                                    await Game.SendMapOverride(msg.Player);
                                 break;
                             }
                         case 8: // set player patch config
@@ -864,6 +1021,8 @@ namespace Horizon.Plugin.UYA
                                     // try to update game config
                                     if (await Game.SetGameConfig(msg.Player.CurrentGame, request.Config, request.CustomMapConfig))
                                     {
+                                        msg.Player.CurrentGame.GameName = ConstructGameNameWithModeAndMap(msg.Player.CurrentGame);
+
                                         // send new game config to other players in lobby
                                         await Game.BroadcastGameConfig(msg.Player.CurrentGame);
                                     }
@@ -874,7 +1033,10 @@ namespace Horizon.Plugin.UYA
                             {
                                 var game = msg.Player.CurrentGame;
                                 if (game != null && game.Host == msg.Player && game.WorldStatus == MediusWorldStatus.WorldStaging)
+                                {
                                     await game.SetWorldStatus(MediusWorldStatus.WorldActive);
+                                    game.GameName = ConstructGameNameWithModeAndMap(game);
+                                }
                                 break;
                             }
                         case 12: // game ended
@@ -895,6 +1057,24 @@ namespace Horizon.Plugin.UYA
                                 request.Deserialize(reader);
 
                                 await SetClientMachineId(msg.Player, request.MachineId);
+                                break;
+                            }
+                        case 25: // set game state
+                            {
+                                if (msg.Player.CurrentGame != null)
+                                {
+                                    var request = new SetGameStateRequestMessage();
+                                    request.Deserialize(reader);
+									// The native session elects a replacement host after a departure.
+									// Its first host-only state report restores plugin ownership too.
+									var game = msg.Player.CurrentGame;
+									if (game.Host == null && game.WorldStatus == MediusWorldStatus.WorldActive &&
+										game.Clients.Any(x => x.Client == msg.Player && x.InGame))
+										game.Host = msg.Player;
+									if (game.Host != msg.Player)
+										break;
+                                    await Game.SetGameState(msg.Player.CurrentGame, request.State);
+                                }
                                 break;
                             }
                         case 16: // player picked up horizon bolt
@@ -1047,6 +1227,178 @@ namespace Horizon.Plugin.UYA
 
         public void DebugLog(string text) {
             Host.Log(InternalLogLevel.INFO, "UYA Plugin Logging: " + text);
+        }
+
+		/*
+		 * NAME : onGameWorldPlayerList
+		 * DESCRIPTION : Add host-reported team IDs to UYA Game Details roster entries.
+		 * NOTES : Stats[0xfc..0xff] contains 'U', 'Y', 'A', team (0..7 or 0xff unknown).
+		 * ARGS :
+		 * RETURN :
+		 * AUTHOR : Troy "Metroynome" Pruitt
+		 */
+		private async Task onGameWorldPlayerList(NetMessageTypes msgClass, byte msgType, object data)
+		{
+			var args = (OnMediusMessageArgs)data;
+			if (args.Ignore || !args.IsIncoming || args.Player == null ||
+				!SupportedAppIds.Contains(args.Player.ApplicationId) ||
+				args.Message is not MediusGameWorldPlayerListRequest request)
+				return;
+
+			var game = Program.Manager.GetGameByGameId(request.MediusWorldID);
+			if (game == null || !SupportedAppIds.Contains(game.ApplicationId))
+				return;
+
+			var metadata = await Game.GetGameMetadata(game);
+			var players = game.Clients.Where(x => x != null && x.InGame && x.Client.IsConnected)
+				.Select(x => new MediusGameWorldPlayerListResponse
+				{
+					MessageID = request.MessageID,
+					StatusCode = MediusCallbackStatus.MediusSuccess,
+					AccountID = x.Client.AccountId,
+					AccountName = x.Client.AccountName,
+					ConnectionClass = MediusConnectionType.Ethernet
+				}).ToArray();
+
+			foreach (var player in players)
+			{
+				int offset = RT.Common.Constants.ACCOUNTSTATS_MAXLEN - 4;
+				player.Stats[offset] = (byte)'U';
+				player.Stats[offset + 1] = (byte)'Y';
+				player.Stats[offset + 2] = (byte)'A';
+				player.Stats[offset + 3] = 0xff;
+				if (metadata.GameState?.PlayerTeams != null &&
+					metadata.GameState.PlayerTeams.TryGetValue(player.AccountID, out int team) && team >= 0 && team < 8)
+					player.Stats[offset + 3] = (byte)team;
+			}
+
+			if (players.Length > 0)
+			{
+				players[players.Length - 1].EndOfList = true;
+				args.Player.Queue(players);
+			}
+			else
+			{
+				args.Player.Queue(new MediusGameWorldPlayerListResponse
+				{
+					MessageID = request.MessageID,
+					StatusCode = MediusCallbackStatus.MediusNoResult,
+					EndOfList = true
+				});
+			}
+			args.Ignore = true;
+		}
+
+        Task OnRecvGameListExtraInfo(NetMessageTypes msgClass, byte msgType, object data)
+        {
+            var msg = (Server.Medius.PluginArgs.OnMediusMessageArgs)data;
+            if (msg.Ignore || !msg.IsIncoming || msg.Player == null)
+                return Task.CompletedTask;
+            if (!SupportedAppIds.Contains(msg.Player.ApplicationId))
+                return Task.CompletedTask;
+
+            var clientObject = msg.Player;
+            var request = (msg.Message as MediusGameList_ExtraInfoRequest);
+            var gameList = Program.Manager.GetGameList(
+                               clientObject.ApplicationId,
+                               request.PageID,
+                               request.PageSize,
+                               clientObject.GameListFilters)
+                               .Select(x => new MediusGameList_ExtraInfoResponse()
+                               {
+                                   MessageID = request.MessageID,
+                                   StatusCode = MediusCallbackStatus.MediusSuccess,
+                                   GameHostType = x.GameHostType,
+                                   GameLevel = x.GameLevel,
+                                   GameName = ConstructGameNameWithModeAndMap(x),
+                                   GameStats = x.GameStats,
+                                   GenericField1 = x.GenericField1,
+                                   GenericField2 = x.GenericField2,
+                                   GenericField3 = x.GenericField3,
+                                   GenericField4 = x.GenericField4,
+                                   GenericField5 = x.GenericField5,
+                                   GenericField6 = x.GenericField6,
+                                   GenericField7 = x.GenericField7,
+                                   GenericField8 = x.GenericField8,
+                                   MaxPlayers = (ushort)x.MaxPlayers,
+                                   MediusWorldID = x.Id,
+                                   MinPlayers = (ushort)x.MinPlayers,
+                                   PlayerCount = (ushort)x.PlayerCount,
+                                   PlayerSkillLevel = x.PlayerSkillLevel,
+                                   RulesSet = x.RulesSet,
+                                   SecurityLevel = (String.IsNullOrEmpty(x.GamePassword) ? MediusWorldSecurityLevelType.WORLD_SECURITY_NONE : MediusWorldSecurityLevelType.WORLD_SECURITY_PLAYER_PASSWORD),
+                                   WorldStatus = x.WorldStatus,
+                                   EndOfList = false
+                               }).ToArray();
+
+            // Make last end of list
+            if (gameList.Length > 0)
+            {
+                gameList[gameList.Length - 1].EndOfList = true;
+
+                // Add to responses
+                clientObject.Queue(gameList);
+            }
+            else
+            {
+                clientObject.Queue(new MediusGameList_ExtraInfoResponse()
+                {
+                    MessageID = request.MessageID,
+                    StatusCode = MediusCallbackStatus.MediusNoResult,
+                    EndOfList = true
+                });
+            }
+
+            msg.Ignore = true;
+            return Task.CompletedTask;
+        }
+
+        string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game)
+        {
+            return ConstructGameNameWithModeAndMap(game, game.GameName, game.WorldStatus);
+        }
+
+        string ConstructGameNameWithModeAndMap(Server.Medius.Models.Game game, string gameName, MediusWorldStatus status)
+        {
+            var metadata = Game.GetGameMetadata(game).Result;
+            if (metadata == null || metadata.GameConfig == null) return gameName;
+
+            var customModeId = (byte)metadata.GetRealCustomModeId();
+            var customMapName = metadata.GetCustomMapName();
+
+            // Vanilla setup keeps the native name; join flags are only needed in-game.
+            if (status != MediusWorldStatus.WorldActive && customModeId == 0 && String.IsNullOrEmpty(customMapName))
+                return StripPackedGameName(gameName);
+
+            // add gamename
+            var name = StripPackedGameName(gameName);
+            if (name.Length > 15)
+                name = name.Substring(0, 15);
+            name += '\0';
+
+            // add effective mode
+            name += (char)((customModeId >> 4) | 0x20 |
+                (metadata.GameConfig.allowMidGameJoining ? 0x10 : 0) |
+                (status == MediusWorldStatus.WorldActive ? 0x40 : 0));
+            name += (char)(customModeId & 0xf);
+
+            // add map name
+            name += customMapName;
+
+            // clamp
+            if (name.Length > RT.Common.Constants.GAMENAME_MAXLEN)
+                name = name.Substring(0, RT.Common.Constants.GAMENAME_MAXLEN);
+
+            return name;
+        }
+
+        string StripPackedGameName(string gameName)
+        {
+            if (String.IsNullOrEmpty(gameName))
+                return String.Empty;
+
+            var terminatorIndex = gameName.IndexOf('\0');
+            return terminatorIndex >= 0 ? gameName.Substring(0, terminatorIndex) : gameName;
         }
 
     }
