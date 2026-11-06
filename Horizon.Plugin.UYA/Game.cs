@@ -30,7 +30,10 @@ namespace Horizon.Plugin.UYA
 
         private static int GetObjectiveLimit(Server.Medius.Models.Game game, GameMetadata metadata)
         {
-            return game.GenericField3;
+            if (IsCtf(game) || GetGenericField3GameMode(game) == 2)
+                return game.GenericField1;
+
+            return 0;
         }
 
         public static async Task BroadcastGameConfig(Server.Medius.Models.Game game)
