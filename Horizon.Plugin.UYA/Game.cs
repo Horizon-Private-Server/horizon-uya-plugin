@@ -701,12 +701,10 @@ namespace Horizon.Plugin.UYA
         public byte GamemodeOverride { get; set; }
         public byte grRadarBlipsDistance { get; set; }
         public byte grRespawnTimer_Player { get; set; }
-        public bool grRespawnInvicibility { get; set; }
         public bool grDisablePenaltyTimers { get; set; }
         public bool grDisableWeaponPacks { get; set; }
         public byte grV2s { get; set; }
         public bool grNoCooldown { get; set; }
-        public bool grHealthBars { get; set; }
         public byte grHealthBoxes { get; set; }
         public bool grDisableWeaponCrates { get; set; }
         public bool grDisableAmmoPickups { get; set; }
@@ -719,12 +717,8 @@ namespace Horizon.Plugin.UYA
         public bool grDisablePlayerTurret { get; set; }
         public bool grNoBaseDefense_Bots { get; set; }
         public byte grNoBaseDefense_SmallTurrets { get; set; }
-        public bool grBaseHealthPadActive { get; set; }
         public byte grVampire { get; set; }
-        public bool grFluxShotsAlwaysHit { get; set; }
-        public bool grFluxNikingDisabled { get; set; }
         public bool grFlagHotspots { get; set; }
-        public bool grDestructableBridges { get; set; }
         public byte grSuicidePenaltyTimer { get; set; }
         public byte grAllNodesTimer { get; set; }
         public byte grNodeSelectTimer { get; set; }
@@ -739,15 +733,12 @@ namespace Horizon.Plugin.UYA
         public int grSeed { get; set; }
         public bool grNewPlayerSync { get; set; }
         public bool prSurvivor { get; set; }
-        public bool prChargebootForever { get; set; }
-        public bool prLoadoutWeaponsOnly { get; set; }
-        public bool prGravityBombTweakers { get; set; }
         public bool prDisableDlStyleFlips { get; set; }
 		public bool allowMidGameJoining { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[50];
+            byte[] output = new byte[41];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new MessageWriter(ms))
@@ -756,12 +747,10 @@ namespace Horizon.Plugin.UYA
                     writer.Write(GamemodeOverride);
                     writer.Write(grRadarBlipsDistance);
                     writer.Write(grRespawnTimer_Player);
-                    writer.Write(grRespawnInvicibility);
                     writer.Write(grDisablePenaltyTimers);
                     writer.Write(grDisableWeaponPacks);
                     writer.Write(grV2s);
                     writer.Write(grNoCooldown);
-                    writer.Write(grHealthBars);
                     writer.Write(grHealthBoxes);
                     writer.Write(grDisableWeaponCrates);
                     writer.Write(grDisableAmmoPickups);
@@ -774,12 +763,8 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grDisablePlayerTurret);
                     writer.Write(grNoBaseDefense_Bots);
                     writer.Write(grNoBaseDefense_SmallTurrets);
-                    writer.Write(grBaseHealthPadActive);
                     writer.Write(grVampire);
-                    writer.Write(grFluxShotsAlwaysHit);
-                    writer.Write(grFluxNikingDisabled);
                     writer.Write(grFlagHotspots);
-                    writer.Write(grDestructableBridges);
                     writer.Write(grSuicidePenaltyTimer);
                     writer.Write(grAllNodesTimer);
                     writer.Write(grNodeSelectTimer);
@@ -794,9 +779,6 @@ namespace Horizon.Plugin.UYA
                     writer.Write(grSeed);
                     writer.Write(grNewPlayerSync);
                     writer.Write(prSurvivor);
-                    writer.Write(prChargebootForever);
-                    writer.Write(prLoadoutWeaponsOnly);
-                    writer.Write(prGravityBombTweakers);
                     writer.Write(prDisableDlStyleFlips);
 					writer.Write(allowMidGameJoining);
                 }
@@ -811,12 +793,10 @@ namespace Horizon.Plugin.UYA
             GamemodeOverride = reader.ReadByte();
             grRadarBlipsDistance = reader.ReadByte();
             grRespawnTimer_Player = reader.ReadByte();
-            grRespawnInvicibility = reader.ReadBoolean();
             grDisablePenaltyTimers = reader.ReadBoolean();
             grDisableWeaponPacks = reader.ReadBoolean();
             grV2s = reader.ReadByte();
             grNoCooldown = reader.ReadBoolean();
-            grHealthBars = reader.ReadBoolean();
             grHealthBoxes = reader.ReadByte();
             grDisableWeaponCrates = reader.ReadBoolean();
             grDisableAmmoPickups = reader.ReadBoolean();
@@ -829,12 +809,8 @@ namespace Horizon.Plugin.UYA
             grDisablePlayerTurret = reader.ReadBoolean();
             grNoBaseDefense_Bots = reader.ReadBoolean();
             grNoBaseDefense_SmallTurrets = reader.ReadByte();
-            grBaseHealthPadActive = reader.ReadBoolean();
             grVampire = reader.ReadByte();
-            grFluxShotsAlwaysHit = reader.ReadBoolean();
-            grFluxNikingDisabled = reader.ReadBoolean();
             grFlagHotspots = reader.ReadBoolean();
-            grDestructableBridges = reader.ReadBoolean();
             grSuicidePenaltyTimer = reader.ReadByte();
             grAllNodesTimer = reader.ReadByte();
             grNodeSelectTimer = reader.ReadByte();
@@ -849,9 +825,6 @@ namespace Horizon.Plugin.UYA
             grSeed = reader.ReadInt32();
             grNewPlayerSync = reader.ReadBoolean();
             prSurvivor = reader.ReadBoolean();
-            prChargebootForever = reader.ReadBoolean();
-            prLoadoutWeaponsOnly = reader.ReadBoolean();
-            prGravityBombTweakers = reader.ReadBoolean();
             prDisableDlStyleFlips = reader.ReadBoolean();
 			allowMidGameJoining = reader.ReadBoolean();
         }
@@ -865,12 +838,10 @@ namespace Horizon.Plugin.UYA
                 && GamemodeOverride == other.GamemodeOverride
                 && grRadarBlipsDistance == other.grRadarBlipsDistance
                 && grRespawnTimer_Player == other.grRespawnTimer_Player
-                && grRespawnInvicibility == other.grRespawnInvicibility
                 && grDisablePenaltyTimers == other.grDisablePenaltyTimers
                 && grDisableWeaponPacks == other.grDisableWeaponPacks
                 && grV2s == other.grV2s
                 && grNoCooldown == other.grNoCooldown
-                && grHealthBars == other.grHealthBars
                 && grHealthBoxes == other.grHealthBoxes
                 && grDisableWeaponCrates == other.grDisableWeaponCrates
                 && grDisableAmmoPickups == other.grDisableAmmoPickups
@@ -883,12 +854,8 @@ namespace Horizon.Plugin.UYA
                 && grDisablePlayerTurret == other.grDisablePlayerTurret
                 && grNoBaseDefense_Bots == other.grNoBaseDefense_Bots
                 && grNoBaseDefense_SmallTurrets == other.grNoBaseDefense_SmallTurrets
-                && grBaseHealthPadActive == other.grBaseHealthPadActive
                 && grVampire == other.grVampire
-                && grFluxShotsAlwaysHit == other.grFluxShotsAlwaysHit
-                && grFluxNikingDisabled == other.grFluxNikingDisabled
                 && grFlagHotspots == other.grFlagHotspots
-                && grDestructableBridges == other.grDestructableBridges
                 && grSuicidePenaltyTimer == other.grSuicidePenaltyTimer
                 && grAllNodesTimer == other.grAllNodesTimer
                 && grNodeSelectTimer == other.grNodeSelectTimer
@@ -903,9 +870,6 @@ namespace Horizon.Plugin.UYA
                 && grSeed == other.grSeed
                 && grNewPlayerSync == other.grNewPlayerSync
                 && prSurvivor == other.prSurvivor
-                && prChargebootForever == other.prChargebootForever
-                && prLoadoutWeaponsOnly == other.prLoadoutWeaponsOnly
-                && prGravityBombTweakers == other.prGravityBombTweakers
                 && prDisableDlStyleFlips == other.prDisableDlStyleFlips
 				&& allowMidGameJoining == other.allowMidGameJoining
                 ;

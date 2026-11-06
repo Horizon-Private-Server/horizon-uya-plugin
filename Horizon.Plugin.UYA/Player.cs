@@ -216,16 +216,12 @@ namespace Horizon.Plugin.UYA
         public bool enableFpsCounter { get; set; }
         public byte playerFov { get; set; }
         public bool enableSpectate { get; set; }
-        public bool alwaysShowHealth { get; set; }
         public byte mapScoreToggle_MapBtn { get; set; }
         public byte mapScoreToggle_ScoreBtn { get; set; }
         public bool disableScavengerHunt { get; set; }
         public bool enableSingleplayerMusic { get; set; }
         public byte quickSelectTimeDelay { get; set; }
         public bool aimAssist { get; set; }
-        public byte cycleWeapon1 { get; set; }
-        public byte cycleWeapon2 { get; set; }
-        public byte cycleWeapon3 { get; set; }
         public byte hypershotEquipButton { get; set; }
         public bool disableDpadMovement { get; set; }
         public bool hideFluxReticle { get; set; }
@@ -237,7 +233,7 @@ namespace Horizon.Plugin.UYA
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[24];
+            byte[] output = new byte[20];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -248,16 +244,12 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableFpsCounter);
                     writer.Write(playerFov);
                     writer.Write(enableSpectate);
-                    writer.Write(alwaysShowHealth);
                     writer.Write(mapScoreToggle_MapBtn);
                     writer.Write(mapScoreToggle_ScoreBtn);
                     writer.Write(disableScavengerHunt);
                     writer.Write(enableSingleplayerMusic);
                     writer.Write(quickSelectTimeDelay);
                     writer.Write(aimAssist);
-                    writer.Write(cycleWeapon1);
-                    writer.Write(cycleWeapon2);
-                    writer.Write(cycleWeapon3);
                     writer.Write(hypershotEquipButton);
                     writer.Write(disableDpadMovement);
                     writer.Write(hideFluxReticle);
@@ -280,16 +272,12 @@ namespace Horizon.Plugin.UYA
             enableFpsCounter = reader.ReadBoolean();
             playerFov = reader.ReadByte();
             enableSpectate = reader.ReadBoolean();
-            alwaysShowHealth = reader.ReadBoolean();
             mapScoreToggle_MapBtn = reader.ReadByte();
             mapScoreToggle_ScoreBtn = reader.ReadByte();
             disableScavengerHunt = reader.ReadBoolean();
             enableSingleplayerMusic = reader.ReadBoolean();
             quickSelectTimeDelay = reader.ReadByte();
             aimAssist = reader.ReadBoolean();
-            cycleWeapon1 = reader.ReadByte();
-            cycleWeapon2 = reader.ReadByte();
-            cycleWeapon3 = reader.ReadByte();
             hypershotEquipButton = reader.ReadByte();
             disableDpadMovement = reader.ReadBoolean();
             hideFluxReticle = reader.ReadBoolean();
