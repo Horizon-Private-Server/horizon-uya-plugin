@@ -203,6 +203,7 @@ namespace Horizon.Plugin.UYA
 
         async Task OnTick(PluginEvent eventId, object data)
         {
+			HealthBoxes.tick();
             // try and get app settings
             if (!hasQueriedAppSettings && await Server.Medius.Program.Database.AmIAuthenticated() && !String.IsNullOrEmpty(Server.Medius.Program.Database.GetUsername()))
             {
@@ -475,6 +476,7 @@ namespace Horizon.Plugin.UYA
             if (!SupportedAppIds.Contains(msg.Game.ApplicationId))
                 return Task.CompletedTask;
 
+			HealthBoxes.clear(msg.Game);
             return Game.OnGameStarted(msg.Game);
         }
 
@@ -486,6 +488,7 @@ namespace Horizon.Plugin.UYA
             if (!SupportedAppIds.Contains(msg.Game.ApplicationId))
                 return Task.CompletedTask;
 
+			HealthBoxes.clear(msg.Game);
             return Game.OnGameEnded(msg.Game);
         }
 
@@ -498,6 +501,7 @@ namespace Horizon.Plugin.UYA
                 return Task.CompletedTask;
 
 			migratedWorlds.Remove(msg.Game.Id);
+			HealthBoxes.clear(msg.Game);
             return Game.OnGameDestroyed(msg.Game);
         }
 
@@ -939,6 +943,12 @@ namespace Horizon.Plugin.UYA
 
                     switch (customMsgId)
                     {
+						case HealthBoxMessage.Id:
+							if (contents.Length != 32) break;
+							var healthMessage = new HealthBoxMessage();
+							healthMessage.Deserialize(reader);
+							HealthBoxes.handle(msg.Player, healthMessage);
+							break;
                         case 2: // download data response
                             {
                                 var downloadDataResponse = new DataDownloadResponseMessage();
