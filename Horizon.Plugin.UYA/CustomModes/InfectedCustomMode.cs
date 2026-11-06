@@ -23,14 +23,13 @@ namespace Horizon.Plugin.UYA.CustomModes
 
         public override Task<string> GetGameInfo(Server.Medius.Models.Game game, GameMetadata metadata)
         {
-            var timelimit = (game.GenericField7 >> 27) & 7;
+            var timelimit = game.GenericField3 & 7;
             var time = $"{timelimit * 5} minutes";
             if (timelimit == 0)
                 time = "None";
 
-            var scoreToWin = "None";
-            if (game.GenericField3 > 0)
-                scoreToWin = game.GenericField3.ToString();
+			var objectiveLimit = Game.GetObjectiveLimit(game);
+			var scoreToWin = objectiveLimit == 0 ? "None" : objectiveLimit.ToString();
 
             return Task.FromResult($"Timelimit: {time}\nScore to win: {scoreToWin}");
         }

@@ -28,13 +28,20 @@ namespace Horizon.Plugin.UYA
         internal static bool IsSiege(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 0;
         internal static bool IsCtf(Server.Medius.Models.Game game) => GetGenericField3GameMode(game) == 1;
 
-        private static int GetObjectiveLimit(Server.Medius.Models.Game game, GameMetadata metadata)
-        {
-            if (IsCtf(game) || GetGenericField3GameMode(game) == 2)
-                return game.GenericField1;
-
-            return 0;
-        }
+		internal static int GetObjectiveLimit(Server.Medius.Models.Game game)
+		{
+			// UYA packs objective limits into GenericField3; GenericField1 is the map ID.
+			var field = unchecked((uint)game.GenericField3);
+			switch (GetGenericField3GameMode(game))
+			{
+				case 1: // CTF: four-bit cap count.
+					return (int)((field >> 23) & 0x0f);
+				case 2: // Deathmatch: three-bit kill count in increments of five.
+					return (int)((field >> 19) & 7) * 5;
+				default:
+					return 0;
+			}
+		}
 
         public static async Task BroadcastGameConfig(Server.Medius.Models.Game game)
         {
@@ -362,8 +369,8 @@ namespace Horizon.Plugin.UYA
             // default game info
             if (String.IsNullOrEmpty(gameInfo))
             {
-                var scoreToWin = GetObjectiveLimit(game, metadata);
-                var timelimit = (game.GenericField7 >> 27) & 7;
+                var scoreToWin = GetObjectiveLimit(game);
+                var timelimit = game.GenericField3 & 7;
                 string objectiveLabel = null;
 
                 switch (GetGenericField3GameMode(game))
