@@ -233,10 +233,11 @@ namespace Horizon.Plugin.UYA
         public bool enableTeamInfo { get; set; }
         public byte preferredGameServer { get; set; }
         public byte controllerDeadzone { get; set; }
+        public byte wrenchAimAssist { get; set; }
 
         public byte[] Serialize()
         {
-            byte[] output = new byte[23];
+            byte[] output = new byte[24];
             using (var ms = new MemoryStream(output, true))
             {
                 using (var writer = new BinaryWriter(ms))
@@ -264,6 +265,7 @@ namespace Horizon.Plugin.UYA
                     writer.Write(enableTeamInfo);
                     writer.Write(preferredGameServer);
                     writer.Write(controllerDeadzone);
+                    writer.Write(wrenchAimAssist);
                 }
             }
 
@@ -295,6 +297,7 @@ namespace Horizon.Plugin.UYA
             enableTeamInfo = reader.ReadBoolean();
             preferredGameServer = reader.ReadByte();
             controllerDeadzone = reader.ReadByte();
+            wrenchAimAssist = reader.ReadByte();
         }
     }
 }
