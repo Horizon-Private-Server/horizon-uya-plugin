@@ -160,7 +160,7 @@ namespace Horizon.Plugin.UYA
     public enum PlayerClientType
     {
         Normal = 0,
-        HRZ = 1,
+        HZN = 1,
         PCSX2 = 2,
     }
 
